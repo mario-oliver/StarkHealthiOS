@@ -96,6 +96,26 @@ struct APIClient {
         try await request(path: "v1/dogs/\(dogId)/daily-action-steps/\(stepId)", method: "PATCH", body: body).data
     }
 
+    func updateDailyTask(
+        _ dogId: String,
+        taskId: String,
+        body: UpdateDailyTaskBody
+    ) async throws -> DailyTaskRecord {
+        try await request(path: "v1/dogs/\(dogId)/daily-tasks/\(taskId)", method: "PATCH", body: body).data
+    }
+
+    func createDailyTask(_ dogId: String, input: CreateDailyTaskInput) async throws -> DailyTaskRecord {
+        try await request(path: "v1/dogs/\(dogId)/daily-tasks", method: "POST", body: input).data
+    }
+
+    func reviewDailyTask(
+        _ dogId: String,
+        taskId: String,
+        input: ReviewDailyTaskInput
+    ) async throws -> DailyTaskRecord {
+        try await request(path: "v1/dogs/\(dogId)/daily-tasks/\(taskId)/review", method: "PATCH", body: input).data
+    }
+
     func getCarePlan(_ dogId: String) async throws -> CarePlanPayload {
         try await request(path: "v1/dogs/\(dogId)/care-plan").data
     }
@@ -259,6 +279,14 @@ struct UpdateDailyActionBody: Encodable {
 struct UpdateDailyActionStepBody: Encodable {
     var status: DailyCareActionStatus?
     var notes: String?
+}
+
+struct UpdateDailyTaskBody: Encodable {
+    var status: DailyCareActionStatus?
+    var notes: String?
+    var actualReps: Int?
+    var actualDurationSeconds: Int?
+    var needsReview: Bool?
 }
 
 private struct APIErrorBody: Decodable {

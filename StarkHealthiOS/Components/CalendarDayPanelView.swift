@@ -21,9 +21,9 @@ struct CalendarDayPanelView: View {
                     .font(.caption)
                     .foregroundStyle(StarkTheme.primary)
 
-                ForEach(payload.dailyLog.dailyCareActions) { action in
-                    ExerciseCardView(
-                        action: action,
+                ForEach(allTasks(from: payload)) { task in
+                    TaskRowView(
+                        task: task,
                         dogId: dogId,
                         apiClient: apiClient,
                         onUpdated: reload
@@ -33,6 +33,12 @@ struct CalendarDayPanelView: View {
         }
         .padding(.top, 16)
         .task(id: date) { await reload() }
+    }
+
+    private func allTasks(from payload: TodayPayload) -> [DailyTaskRecord] {
+        payload.buckets.activity.tasks
+            + payload.buckets.mobility.tasks
+            + payload.buckets.recovery.tasks
     }
 
     private func reload() async {

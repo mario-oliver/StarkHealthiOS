@@ -59,6 +59,19 @@ enum CareActionTimeOfDay: String, Codable, CaseIterable {
     case anytime = "ANYTIME"
 }
 
+enum CareBucket: String, Codable, CaseIterable {
+    case activity = "ACTIVITY"
+    case mobility = "MOBILITY"
+    case recovery = "RECOVERY"
+}
+
+enum DailyTaskSource: String, Codable {
+    case plan = "PLAN"
+    case adHoc = "AD_HOC"
+    case llmExtracted = "LLM_EXTRACTED"
+    case planVariation = "PLAN_VARIATION"
+}
+
 enum DogSex: String, Codable, CaseIterable {
     case male = "MALE"
     case female = "FEMALE"
@@ -180,9 +193,10 @@ struct VoiceNoteRecord: Codable, Identifiable {
     let user: UserSummary
 }
 
-struct HealthObservationRecord: Codable, Identifiable {
+struct HealthObservationRecord: Codable, Identifiable, Hashable {
     let id: String
     let type: HealthObservationType
+    let bucket: CareBucket?
     let severity: String?
     let bodyArea: String?
     let note: String
@@ -191,9 +205,78 @@ struct HealthObservationRecord: Codable, Identifiable {
     let user: UserSummary
 }
 
+struct BucketScore: Codable {
+    let score: Int
+    let label: String
+    let summary: String
+    let reasons: [String]
+    let signals: [String]?
+    let computedAt: String
+}
+
+struct SubstitutedForTask: Codable {
+    let id: String
+    let nameSnapshot: String
+}
+
+struct DailyTaskRecord: Codable, Identifiable {
+    let id: String
+    let dailyCareLogId: String
+    let bucket: CareBucket
+    let source: DailyTaskSource
+    let nameSnapshot: String
+    let descriptionSnapshot: String?
+    let instructionsSnapshot: String?
+    let status: DailyCareActionStatus
+    let completedAt: String?
+    let completedByUserId: String?
+    let notes: String?
+    let targetReps: Int?
+    let actualReps: Int?
+    let targetDurationSeconds: Int?
+    let actualDurationSeconds: Int?
+    let careActionId: String?
+    let careActionStepId: String?
+    let substitutedForTaskId: String?
+    let substitutedFor: SubstitutedForTask?
+    let needsReview: Bool
+    let sortOrder: Int
+    let mediaUrl: String?
+    let mediaContentType: String?
+    let completedBy: UserSummary?
+}
+
+struct BucketProgress: Codable {
+    let completed: Int
+    let total: Int
+}
+
+struct BucketPayload: Codable {
+    let tasks: [DailyTaskRecord]
+    let observations: [HealthObservationRecord]
+    let progress: BucketProgress?
+    let score: BucketScore?
+}
+
+struct BucketScores: Codable {
+    let activity: BucketScore?
+    let mobility: BucketScore?
+    let recovery: BucketScore?
+}
+
+struct TodayBuckets: Codable {
+    let activity: BucketPayload
+    let mobility: BucketPayload
+    let recovery: BucketPayload
+}
+
 struct DailyLogPayload: Codable {
     let id: String
     let summary: String?
+    let bucketScores: BucketScores?
+    let scoreComputedAt: String?
+    let scoreInputVersion: String?
+    let latestVoiceNoteAt: String?
     let dailyCareActions: [DailyCareActionRecord]
     let voiceNotes: [VoiceNoteRecord]
     let healthObservations: [HealthObservationRecord]
@@ -208,6 +291,7 @@ struct TodayPayload: Codable {
     let dog: DogRecord
     let date: String
     let dailyLog: DailyLogPayload
+    let buckets: TodayBuckets
     let progress: TodayProgress
 }
 
@@ -250,6 +334,7 @@ struct CareActionStepRecord: Codable, Identifiable {
     let id: String
     let careActionId: String
     let name: String
+    let bucket: CareBucket?
     let description: String?
     let instructions: String?
     let targetReps: Int?
@@ -269,6 +354,7 @@ struct CareActionRecord: Codable, Identifiable {
     let name: String
     let description: String?
     let category: CareActionCategory
+    let bucket: CareBucket?
     let frequency: CareActionFrequency
     let timeOfDay: CareActionTimeOfDay?
     let targetReps: Int?
@@ -291,10 +377,27 @@ struct CarePlanPayload: Codable {
     let actions: [CareActionRecord]
 }
 
+struct CreateDailyTaskInput: Encodable {
+    var dailyCareLogId: String?
+    var date: String?
+    let bucket: CareBucket
+    let name: String
+    var description: String?
+    var notes: String?
+    var targetReps: Int?
+    var targetDurationSeconds: Int?
+}
+
+struct ReviewDailyTaskInput: Encodable {
+    let accept: Bool
+    var status: DailyCareActionStatus?
+}
+
 struct CreateCareActionInput: Encodable {
     let name: String
     var description: String?
     let category: CareActionCategory
+    var bucket: CareBucket?
     let frequency: CareActionFrequency
     var timeOfDay: CareActionTimeOfDay?
     var targetReps: Int?
@@ -307,6 +410,7 @@ struct UpdateCareActionInput: Encodable {
     var name: String?
     var description: String?
     var category: CareActionCategory?
+    var bucket: CareBucket?
     var frequency: CareActionFrequency?
     var timeOfDay: CareActionTimeOfDay?
     var targetReps: Int?
@@ -357,6 +461,7 @@ struct TranscribeVoiceNotePayload: Decodable {
     let dog: DogRecord
     let date: String
     let dailyLog: DailyLogPayload
+    let buckets: TodayBuckets
     let progress: TodayProgress
     let text: String
     let voiceNote: VoiceNoteRecord

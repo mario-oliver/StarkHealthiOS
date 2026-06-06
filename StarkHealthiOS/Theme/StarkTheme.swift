@@ -5,4 +5,6 @@ enum StarkTheme {
     static let mutedForeground = Color.secondary
     static let background = Color(.systemBackground)
     static let foreground = Color(.label)
+    static let card = Color(.secondarySystemBackground)
+    static let border = Color(.separator)
 }

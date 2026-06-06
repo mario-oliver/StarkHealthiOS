@@ -42,7 +42,9 @@ struct CareTabView: View {
             Group {
                 switch session.careSubTab {
                 case .today:
-                    TodayView()
+                    NavigationStack {
+                        TodayView()
+                    }
                 case .calendar:
                     CalendarView()
                 case .history:

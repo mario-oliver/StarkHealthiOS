@@ -41,7 +41,7 @@ struct TodayView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 20) {
                 VStack(spacing: 8) {
-                    Text("CARE")
+                    Text("TODAY")
                         .font(.caption.weight(.medium))
                         .foregroundStyle(StarkTheme.primary)
                         .frame(maxWidth: .infinity, alignment: .leading)
@@ -51,14 +51,6 @@ struct TodayView: View {
                     Text(CareDisplay.formatDisplayDate(payload.date))
                         .font(.subheadline)
                         .foregroundStyle(StarkTheme.mutedForeground)
-
-                    Text("\(payload.progress.completed) of \(payload.progress.total) exercises done")
-                        .font(.subheadline.weight(.medium))
-                        .foregroundStyle(StarkTheme.primary)
-                        .padding(.horizontal, 16)
-                        .padding(.vertical, 6)
-                        .background(StarkTheme.primary.opacity(0.12))
-                        .clipShape(Capsule())
 
                     if let summary = payload.dailyLog.summary {
                         Text(summary)
@@ -76,32 +68,32 @@ struct TodayView: View {
                     Text(error).font(.caption).foregroundStyle(.red)
                 }
 
-                sectionTitle("Exercises today")
-                Text("Speak your update below — tap an exercise to expand and see details.")
-                    .font(.caption)
-                    .foregroundStyle(StarkTheme.mutedForeground)
-
-                ForEach(payload.dailyLog.dailyCareActions) { action in
-                    ExerciseCardView(
-                        action: action,
-                        dogId: dogId,
-                        apiClient: session.apiClient,
-                        onUpdated: { await loadToday() }
-                    )
+                NavigationLink {
+                    BucketDetailView(dogId: dogId, bucket: .activity)
+                } label: {
+                    BucketSummaryCardView(bucket: .activity, data: payload.buckets.activity)
                 }
+                .buttonStyle(.plain)
 
-                if !payload.dailyLog.healthObservations.isEmpty {
-                    sectionTitle("Observations")
-                    ForEach(payload.dailyLog.healthObservations) { obs in
-                        ObservationCardView(observation: obs)
-                    }
+                NavigationLink {
+                    BucketDetailView(dogId: dogId, bucket: .mobility)
+                } label: {
+                    BucketSummaryCardView(bucket: .mobility, data: payload.buckets.mobility)
                 }
+                .buttonStyle(.plain)
 
-                if !payload.dailyLog.voiceNotes.isEmpty {
-                    sectionTitle("Voice updates")
-                    ForEach(payload.dailyLog.voiceNotes) { note in
-                        VoiceNoteCardView(note: note)
-                    }
+                NavigationLink {
+                    BucketDetailView(dogId: dogId, bucket: .recovery)
+                } label: {
+                    BucketSummaryCardView(bucket: .recovery, data: payload.buckets.recovery)
+                }
+                .buttonStyle(.plain)
+
+                if let recent = payload.dailyLog.voiceNotes.first {
+                    sectionTitle("Recent note")
+                    Text("\"\(recent.transcript.prefix(200))\(recent.transcript.count > 200 ? "…" : "")\"")
+                        .font(.subheadline)
+                        .foregroundStyle(StarkTheme.mutedForeground)
                 }
 
                 Text("Stark Health helps organize care notes and PT routines. It does not provide veterinary medical advice.")
@@ -174,6 +166,7 @@ struct TodayView: View {
                 dog: result.dog,
                 date: result.date,
                 dailyLog: result.dailyLog,
+                buckets: result.buckets,
                 progress: result.progress
             )
             error = nil
