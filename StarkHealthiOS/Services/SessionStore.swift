@@ -34,6 +34,7 @@ final class SessionStore {
     var bootstrapError: String?
 
     var apiClient = APIClient()
+    var voiceRecord = VoiceRecordCoordinator()
 
     var activeDog: DogRecord? {
         guard let activeDogId else { return nil }

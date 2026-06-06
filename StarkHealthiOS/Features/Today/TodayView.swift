@@ -8,6 +8,7 @@ struct TodayView: View {
     @State private var error: String?
     @State private var isTranscribing = false
     @State private var pollTask: Task<Void, Never>?
+    @State private var voiceRecordId = UUID()
 
     private var dogId: String? { session.activeDogId }
     private var date: String { CareDisplay.localDateString() }
@@ -102,20 +103,32 @@ struct TodayView: View {
                     .padding(.top, 8)
             }
             .padding(.horizontal, 16)
-            .padding(.bottom, 120)
+            .padding(.bottom, 24)
         }
-        .safeAreaInset(edge: .bottom) {
-            VoiceRecordBarView(
-                isProcessing: isTranscribing || hasProcessingNotes(payload),
-                hint: "Record Update — say what Stark did today.",
-                onRecordingComplete: { data in
-                    await handleRecording(data, dogId: dogId)
-                }
-            )
-        }
-        .onAppear { startPollingIfNeeded(payload) }
-        .onChange(of: payload.dailyLog.voiceNotes.count) { _, _ in
+        .onAppear {
+            registerVoiceRecord()
             startPollingIfNeeded(payload)
+        }
+        .onDisappear {
+            session.voiceRecord.deactivate(id: voiceRecordId)
+            pollTask?.cancel()
+        }
+        .onChange(of: isTranscribing) { _, _ in registerVoiceRecord() }
+        .onChange(of: payload.dailyLog.voiceNotes.count) { _, _ in
+            registerVoiceRecord()
+            startPollingIfNeeded(payload)
+        }
+    }
+
+    private func registerVoiceRecord() {
+        guard payload != nil, dogId != nil else {
+            session.voiceRecord.deactivate(id: voiceRecordId)
+            return
+        }
+        session.voiceRecord.isProcessing = isTranscribing || (payload.map(hasProcessingNotes) ?? false)
+        session.voiceRecord.activate(id: voiceRecordId) { data in
+            guard let dogId else { return }
+            await handleRecording(data, dogId: dogId)
         }
     }
 
@@ -137,6 +150,7 @@ struct TodayView: View {
             self.error = error.localizedDescription
         }
         loading = false
+        registerVoiceRecord()
     }
 
     private func hasProcessingNotes(_ payload: TodayPayload) -> Bool {

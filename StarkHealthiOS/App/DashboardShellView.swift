@@ -11,20 +11,20 @@ struct DashboardShellView: View {
 
             TabView(selection: $session.selectedTab) {
                 CareTabView()
-                    .tabItem { Label("Care", systemImage: "heart.text.square") }
                     .tag(DashboardTab.care)
 
                 ExercisesView()
-                    .tabItem { Label("Exercises", systemImage: "list.clipboard") }
                     .tag(DashboardTab.exercises)
 
                 ProfileView()
-                    .tabItem { Label("Profile", systemImage: "dog") }
                     .tag(DashboardTab.profile)
             }
-            .tint(StarkTheme.primary)
+            .toolbar(.hidden, for: .tabBar)
         }
         .background(StarkTheme.background)
+        .safeAreaInset(edge: .bottom) {
+            DashboardBottomBarView()
+        }
     }
 }
 

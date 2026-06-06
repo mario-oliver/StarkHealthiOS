@@ -13,6 +13,7 @@ struct BucketDetailView: View {
     @State private var addingTask = false
     @State private var newTaskName = ""
     @State private var pollTask: Task<Void, Never>?
+    @State private var voiceRecordId = UUID()
 
     private var date: String { CareDisplay.localDateString() }
 
@@ -130,19 +131,20 @@ struct BucketDetailView: View {
                         }
                     }
                     .padding()
-                    .padding(.bottom, 100)
+                    .padding(.bottom, 24)
                 }
-                .safeAreaInset(edge: .bottom) {
-                    VoiceRecordBarView(
-                        isProcessing: isTranscribing || hasProcessingNotes(payload),
-                        hint: "Record update — say what happened today.",
-                        onRecordingComplete: { data in
-                            await handleRecording(data)
-                        }
-                    )
+                .onAppear {
+                    registerVoiceRecord(payload: payload)
+                    startPollingIfNeeded(payload)
                 }
-                .onAppear { startPollingIfNeeded(payload) }
+                .onDisappear {
+                    session.voiceRecord.deactivate(id: voiceRecordId)
+                }
+                .onChange(of: isTranscribing) { _, _ in
+                    registerVoiceRecord(payload: payload)
+                }
                 .onChange(of: payload.dailyLog.voiceNotes.count) { _, _ in
+                    registerVoiceRecord(payload: payload)
                     startPollingIfNeeded(payload)
                 }
             } else {
@@ -154,6 +156,13 @@ struct BucketDetailView: View {
         .background(StarkTheme.background)
         .task { await loadToday() }
         .onDisappear { pollTask?.cancel() }
+    }
+
+    private func registerVoiceRecord(payload: TodayPayload) {
+        session.voiceRecord.isProcessing = isTranscribing || hasProcessingNotes(payload)
+        session.voiceRecord.activate(id: voiceRecordId) { data in
+            await handleRecording(data)
+        }
     }
 
     private func loadToday() async {

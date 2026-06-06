@@ -4,6 +4,8 @@ struct BucketSummaryCardView: View {
     let bucket: CareBucket
     let data: BucketPayload
 
+    private static let cardHeight: CGFloat = 88
+
     private var title: String {
         switch bucket {
         case .activity: return "Activity"
@@ -40,7 +42,7 @@ struct BucketSummaryCardView: View {
     }
 
     var body: some View {
-        HStack {
+        HStack(alignment: .center, spacing: 12) {
             VStack(alignment: .leading, spacing: 4) {
                 Text(title)
                     .font(.headline)
@@ -48,12 +50,15 @@ struct BucketSummaryCardView: View {
                     .font(.subheadline)
                     .foregroundStyle(StarkTheme.mutedForeground)
                     .lineLimit(2)
+                    .multilineTextAlignment(.leading)
+                    .frame(maxWidth: .infinity, alignment: .leading)
             }
-            Spacer()
             Image(systemName: "chevron.right")
                 .foregroundStyle(StarkTheme.mutedForeground)
         }
         .padding()
+        .frame(maxWidth: .infinity)
+        .frame(height: Self.cardHeight)
         .background(StarkTheme.card)
         .clipShape(RoundedRectangle(cornerRadius: 12))
         .overlay(RoundedRectangle(cornerRadius: 12).stroke(StarkTheme.border))
