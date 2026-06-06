@@ -8,6 +8,7 @@ struct TodayView: View {
     @State private var error: String?
     @State private var isTranscribing = false
     @State private var pollTask: Task<Void, Never>?
+    @State private var voiceRecordId = UUID()
 
     private var dogId: String? { session.activeDogId }
     private var date: String { CareDisplay.localDateString() }
@@ -40,68 +41,54 @@ struct TodayView: View {
     private func content(payload: TodayPayload, dogId: String) -> some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 20) {
-                VStack(spacing: 8) {
-                    Text("CARE")
-                        .font(.caption.weight(.medium))
-                        .foregroundStyle(StarkTheme.primary)
-                        .frame(maxWidth: .infinity, alignment: .leading)
+                DogHeroView(
+                    dogId: dogId,
+                    photoUrl: payload.dog.photoUrl,
+                    name: payload.dog.name,
+                    date: CareDisplay.formatDisplayDate(payload.date)
+                )
 
-                    DogHeroView(dogId: dogId, photoUrl: payload.dog.photoUrl, name: payload.dog.name)
-
-                    Text(CareDisplay.formatDisplayDate(payload.date))
+                if let summary = payload.dailyLog.summary {
+                    Text(summary)
                         .font(.subheadline)
                         .foregroundStyle(StarkTheme.mutedForeground)
-
-                    Text("\(payload.progress.completed) of \(payload.progress.total) exercises done")
-                        .font(.subheadline.weight(.medium))
-                        .foregroundStyle(StarkTheme.primary)
-                        .padding(.horizontal, 16)
-                        .padding(.vertical, 6)
-                        .background(StarkTheme.primary.opacity(0.12))
-                        .clipShape(Capsule())
-
-                    if let summary = payload.dailyLog.summary {
-                        Text(summary)
-                            .font(.subheadline)
-                            .foregroundStyle(StarkTheme.mutedForeground)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            .padding(.leading, 12)
-                            .overlay(alignment: .leading) {
-                                Rectangle().fill(StarkTheme.primary).frame(width: 2)
-                            }
-                    }
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(.leading, 12)
+                        .overlay(alignment: .leading) {
+                            Rectangle().fill(StarkTheme.primary).frame(width: 2)
+                        }
                 }
 
                 if let error {
                     Text(error).font(.caption).foregroundStyle(.red)
                 }
 
-                sectionTitle("Exercises today")
-                Text("Speak your update below — tap an exercise to expand and see details.")
-                    .font(.caption)
-                    .foregroundStyle(StarkTheme.mutedForeground)
-
-                ForEach(payload.dailyLog.dailyCareActions) { action in
-                    ExerciseCardView(
-                        action: action,
-                        dogId: dogId,
-                        apiClient: session.apiClient,
-                        onUpdated: { await loadToday() }
-                    )
+                NavigationLink {
+                    BucketDetailView(dogId: dogId, bucket: .activity)
+                } label: {
+                    BucketSummaryCardView(bucket: .activity, data: payload.buckets.activity)
                 }
+                .buttonStyle(.plain)
 
-                if !payload.dailyLog.healthObservations.isEmpty {
-                    sectionTitle("Observations")
-                    ForEach(payload.dailyLog.healthObservations) { obs in
-                        ObservationCardView(observation: obs)
-                    }
+                NavigationLink {
+                    BucketDetailView(dogId: dogId, bucket: .mobility)
+                } label: {
+                    BucketSummaryCardView(bucket: .mobility, data: payload.buckets.mobility)
                 }
+                .buttonStyle(.plain)
 
-                if !payload.dailyLog.voiceNotes.isEmpty {
-                    sectionTitle("Voice updates")
-                    ForEach(payload.dailyLog.voiceNotes) { note in
-                        VoiceNoteCardView(note: note)
-                    }
+                NavigationLink {
+                    BucketDetailView(dogId: dogId, bucket: .recovery)
+                } label: {
+                    BucketSummaryCardView(bucket: .recovery, data: payload.buckets.recovery)
+                }
+                .buttonStyle(.plain)
+
+                if let recent = payload.dailyLog.voiceNotes.first {
+                    sectionTitle("Recent note")
+                    Text("\"\(recent.transcript.prefix(200))\(recent.transcript.count > 200 ? "…" : "")\"")
+                        .font(.subheadline)
+                        .foregroundStyle(StarkTheme.mutedForeground)
                 }
 
                 Text("Stark Health helps organize care notes and PT routines. It does not provide veterinary medical advice.")
@@ -110,20 +97,33 @@ struct TodayView: View {
                     .padding(.top, 8)
             }
             .padding(.horizontal, 16)
-            .padding(.bottom, 120)
+            .padding(.bottom, 24)
         }
-        .safeAreaInset(edge: .bottom) {
-            VoiceRecordBarView(
-                isProcessing: isTranscribing || hasProcessingNotes(payload),
-                hint: "Record Update — say what Stark did today.",
-                onRecordingComplete: { data in
-                    await handleRecording(data, dogId: dogId)
-                }
-            )
-        }
-        .onAppear { startPollingIfNeeded(payload) }
-        .onChange(of: payload.dailyLog.voiceNotes.count) { _, _ in
+        .toolbar(.hidden, for: .navigationBar)
+        .onAppear {
+            registerVoiceRecord()
             startPollingIfNeeded(payload)
+        }
+        .onDisappear {
+            session.voiceRecord.deactivate(id: voiceRecordId)
+            pollTask?.cancel()
+        }
+        .onChange(of: isTranscribing) { _, _ in registerVoiceRecord() }
+        .onChange(of: payload.dailyLog.voiceNotes.count) { _, _ in
+            registerVoiceRecord()
+            startPollingIfNeeded(payload)
+        }
+    }
+
+    private func registerVoiceRecord() {
+        guard payload != nil, dogId != nil else {
+            session.voiceRecord.deactivate(id: voiceRecordId)
+            return
+        }
+        session.voiceRecord.isProcessing = isTranscribing || (payload.map(hasProcessingNotes) ?? false)
+        session.voiceRecord.activate(id: voiceRecordId) { data in
+            guard let dogId else { return }
+            await handleRecording(data, dogId: dogId)
         }
     }
 
@@ -145,6 +145,7 @@ struct TodayView: View {
             self.error = error.localizedDescription
         }
         loading = false
+        registerVoiceRecord()
     }
 
     private func hasProcessingNotes(_ payload: TodayPayload) -> Bool {
@@ -174,6 +175,7 @@ struct TodayView: View {
                 dog: result.dog,
                 date: result.date,
                 dailyLog: result.dailyLog,
+                buckets: result.buckets,
                 progress: result.progress
             )
             error = nil

@@ -4,6 +4,7 @@ struct ExercisesView: View {
     @Environment(SessionStore.self) private var session
 
     @State private var tab: ExercisesTab = .routine
+    @State private var routineBucket: CareBucket = .activity
     @State private var plan: CarePlanPayload?
     @State private var schedulePayload: TodayPayload?
     @State private var scheduleDate = CareDisplay.localDateString()
@@ -71,6 +72,7 @@ struct ExercisesView: View {
                             name: input.name,
                             description: input.description,
                             category: input.category,
+                            bucket: input.bucket,
                             frequency: input.frequency,
                             timeOfDay: input.timeOfDay,
                             instructions: input.instructions
@@ -93,6 +95,10 @@ struct ExercisesView: View {
         }
     }
 
+    private var filteredRoutineActions: [CareActionRecord] {
+        (plan?.actions.filter(\.isActive) ?? []).filter { ($0.bucket ?? .activity) == routineBucket }
+    }
+
     private var routineTab: some View {
         VStack(alignment: .leading, spacing: 12) {
             HStack {
@@ -103,7 +109,14 @@ struct ExercisesView: View {
                     .font(.subheadline)
             }
 
-            ForEach(plan?.actions.filter(\.isActive) ?? []) { action in
+            Picker("Bucket", selection: $routineBucket) {
+                ForEach(CareBucket.allCases, id: \.self) { bucket in
+                    Text(CareDisplay.bucketLabel(bucket)).tag(bucket)
+                }
+            }
+            .pickerStyle(.segmented)
+
+            ForEach(filteredRoutineActions) { action in
                 CareActionCardView(
                     action: action,
                     onEdit: { editingAction = action },
@@ -111,8 +124,8 @@ struct ExercisesView: View {
                 )
             }
 
-            if (plan?.actions.filter(\.isActive) ?? []).isEmpty {
-                Text("No exercises in your routine yet.")
+            if filteredRoutineActions.isEmpty {
+                Text("No exercises in this bucket yet.")
                     .foregroundStyle(StarkTheme.mutedForeground)
             }
         }
@@ -130,9 +143,9 @@ struct ExercisesView: View {
             }
 
             if let schedulePayload, let dogId {
-                ForEach(schedulePayload.dailyLog.dailyCareActions) { action in
-                    ExerciseCardView(
-                        action: action,
+                ForEach(allScheduleTasks(from: schedulePayload)) { task in
+                    TaskRowView(
+                        task: task,
                         dogId: dogId,
                         apiClient: session.apiClient,
                         onUpdated: { await loadSchedule() }
@@ -140,6 +153,12 @@ struct ExercisesView: View {
                 }
             }
         }
+    }
+
+    private func allScheduleTasks(from payload: TodayPayload) -> [DailyTaskRecord] {
+        payload.buckets.activity.tasks
+            + payload.buckets.mobility.tasks
+            + payload.buckets.recovery.tasks
     }
 
     private func loadAll() async {

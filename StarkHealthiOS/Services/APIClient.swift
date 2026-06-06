@@ -59,6 +59,17 @@ struct APIClient {
         try await request(path: "v1/dogs/\(dogId)").data
     }
 
+    func fetchDogPhotoData(_ dogId: String) async throws -> Data {
+        let token = try await resolveToken()
+        var urlRequest = URLRequest(url: makeURL(path: "v1/dogs/\(dogId)/photo"))
+        urlRequest.httpMethod = "GET"
+        urlRequest.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+
+        let (data, response) = try await session.data(for: urlRequest)
+        try validate(response: response, data: data)
+        return data
+    }
+
     func updateDog(_ dogId: String, input: UpdateDogInput) async throws -> DogRecord {
         try await request(path: "v1/dogs/\(dogId)", method: "PATCH", body: input).data
     }
@@ -94,6 +105,26 @@ struct APIClient {
         body: UpdateDailyActionStepBody
     ) async throws -> DailyCareActionStepRecord {
         try await request(path: "v1/dogs/\(dogId)/daily-action-steps/\(stepId)", method: "PATCH", body: body).data
+    }
+
+    func updateDailyTask(
+        _ dogId: String,
+        taskId: String,
+        body: UpdateDailyTaskBody
+    ) async throws -> DailyTaskRecord {
+        try await request(path: "v1/dogs/\(dogId)/daily-tasks/\(taskId)", method: "PATCH", body: body).data
+    }
+
+    func createDailyTask(_ dogId: String, input: CreateDailyTaskInput) async throws -> DailyTaskRecord {
+        try await request(path: "v1/dogs/\(dogId)/daily-tasks", method: "POST", body: input).data
+    }
+
+    func reviewDailyTask(
+        _ dogId: String,
+        taskId: String,
+        input: ReviewDailyTaskInput
+    ) async throws -> DailyTaskRecord {
+        try await request(path: "v1/dogs/\(dogId)/daily-tasks/\(taskId)/review", method: "PATCH", body: input).data
     }
 
     func getCarePlan(_ dogId: String) async throws -> CarePlanPayload {
@@ -259,6 +290,14 @@ struct UpdateDailyActionBody: Encodable {
 struct UpdateDailyActionStepBody: Encodable {
     var status: DailyCareActionStatus?
     var notes: String?
+}
+
+struct UpdateDailyTaskBody: Encodable {
+    var status: DailyCareActionStatus?
+    var notes: String?
+    var actualReps: Int?
+    var actualDurationSeconds: Int?
+    var needsReview: Bool?
 }
 
 private struct APIErrorBody: Decodable {

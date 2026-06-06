@@ -18,9 +18,19 @@ struct CareActionCardView: View {
                 }
             }
 
-            Text(action.category.rawValue.replacingOccurrences(of: "_", with: " "))
-                .font(.caption)
-                .foregroundStyle(StarkTheme.mutedForeground)
+            HStack(spacing: 8) {
+                Text(action.category.rawValue.replacingOccurrences(of: "_", with: " "))
+                    .font(.caption)
+                    .foregroundStyle(StarkTheme.mutedForeground)
+
+                Text(CareDisplay.bucketLabel(action.bucket ?? .activity))
+                    .font(.caption2.weight(.medium))
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 2)
+                    .background(StarkTheme.primary.opacity(0.12))
+                    .foregroundStyle(StarkTheme.primary)
+                    .clipShape(Capsule())
+            }
 
             Text("\(action.frequency.rawValue.replacingOccurrences(of: "_", with: " ")) · \(action.steps.count) movements")
                 .font(.caption2)

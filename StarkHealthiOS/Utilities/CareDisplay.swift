@@ -53,6 +53,23 @@ enum CareDisplay {
         return name.isEmpty ? user.email : name
     }
 
+    static func bucketLabel(_ bucket: CareBucket) -> String {
+        switch bucket {
+        case .activity: return "Activity"
+        case .mobility: return "Mobility"
+        case .recovery: return "Recovery"
+        }
+    }
+
+    static func taskSourceLabel(_ source: DailyTaskSource) -> String? {
+        switch source {
+        case .plan: return nil
+        case .adHoc: return "Added manually"
+        case .llmExtracted: return "From voice"
+        case .planVariation: return "From voice · variation"
+        }
+    }
+
     static func statusLabel(_ status: DailyCareActionStatus) -> String {
         switch status {
         case .pending: return "Pending"

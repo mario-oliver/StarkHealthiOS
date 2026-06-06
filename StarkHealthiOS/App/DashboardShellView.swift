@@ -9,22 +9,23 @@ struct DashboardShellView: View {
         VStack(spacing: 0) {
             DashboardHeaderView()
 
-            TabView(selection: $session.selectedTab) {
-                CareTabView()
-                    .tabItem { Label("Care", systemImage: "heart.text.square") }
-                    .tag(DashboardTab.care)
-
-                ExercisesView()
-                    .tabItem { Label("Exercises", systemImage: "list.clipboard") }
-                    .tag(DashboardTab.exercises)
-
-                ProfileView()
-                    .tabItem { Label("Profile", systemImage: "dog") }
-                    .tag(DashboardTab.profile)
+            Group {
+                switch session.selectedTab {
+                case .care:
+                    CareTabView()
+                case .exercises:
+                    ExercisesView()
+                case .profile:
+                    ProfileView()
+                }
             }
-            .tint(StarkTheme.primary)
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
         .background(StarkTheme.background)
+        .safeAreaInset(edge: .bottom, spacing: 0) {
+            DashboardBottomBarView()
+                .background(StarkTheme.background)
+        }
     }
 }
 
@@ -42,7 +43,9 @@ struct CareTabView: View {
             Group {
                 switch session.careSubTab {
                 case .today:
-                    TodayView()
+                    NavigationStack {
+                        TodayView()
+                    }
                 case .calendar:
                     CalendarView()
                 case .history:
