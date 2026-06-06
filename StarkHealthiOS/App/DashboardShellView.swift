@@ -9,21 +9,22 @@ struct DashboardShellView: View {
         VStack(spacing: 0) {
             DashboardHeaderView()
 
-            TabView(selection: $session.selectedTab) {
-                CareTabView()
-                    .tag(DashboardTab.care)
-
-                ExercisesView()
-                    .tag(DashboardTab.exercises)
-
-                ProfileView()
-                    .tag(DashboardTab.profile)
+            Group {
+                switch session.selectedTab {
+                case .care:
+                    CareTabView()
+                case .exercises:
+                    ExercisesView()
+                case .profile:
+                    ProfileView()
+                }
             }
-            .toolbar(.hidden, for: .tabBar)
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
         .background(StarkTheme.background)
-        .safeAreaInset(edge: .bottom) {
+        .safeAreaInset(edge: .bottom, spacing: 0) {
             DashboardBottomBarView()
+                .background(StarkTheme.background)
         }
     }
 }

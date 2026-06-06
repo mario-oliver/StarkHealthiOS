@@ -26,7 +26,7 @@ struct DashboardBottomBarView: View {
         }
         .padding(.horizontal, 16)
         .padding(.top, 8)
-        .padding(.bottom, 4)
+        .padding(.bottom, 8)
     }
 
     @ViewBuilder
