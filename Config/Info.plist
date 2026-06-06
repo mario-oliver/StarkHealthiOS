@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>NSAppTransportSecurity</key>
+	<dict>
+		<key>NSAllowsLocalNetworking</key>
+		<true/>
+	</dict>
+	<key>CLERK_PUBLISHABLE_KEY</key>
+	<string>$(CLERK_PUBLISHABLE_KEY)</string>
+	<key>API_BASE_URL</key>
+	<string>$(API_BASE_URL)</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>Stark Health uses the microphone to record voice care updates.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Stark Health uses your photo library to add dog profile photos.</string>
+	<key>NSCameraUsageDescription</key>
+	<string>Stark Health uses the camera to add dog profile photos.</string>
+</dict>
+</plist>
