@@ -42,11 +42,6 @@ struct TodayView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 20) {
                 VStack(spacing: 8) {
-                    Text("TODAY")
-                        .font(.caption.weight(.medium))
-                        .foregroundStyle(StarkTheme.primary)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-
                     DogHeroView(dogId: dogId, photoUrl: payload.dog.photoUrl, name: payload.dog.name)
 
                     Text(CareDisplay.formatDisplayDate(payload.date))

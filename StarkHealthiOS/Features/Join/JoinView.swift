@@ -66,7 +66,7 @@ struct JoinView: View {
         VStack(spacing: 16) {
             if let preview {
                 VStack(spacing: 12) {
-                    DogPhotoView(photoUrl: preview.photoUrl, name: preview.name, size: 96)
+                    DogPhotoView(dogId: preview.id, photoUrl: preview.photoUrl, name: preview.name, size: 96)
                     Text(preview.name).font(.title3.bold())
                     if let breed = preview.breed {
                         Text(breed).font(.subheadline).foregroundStyle(StarkTheme.mutedForeground)

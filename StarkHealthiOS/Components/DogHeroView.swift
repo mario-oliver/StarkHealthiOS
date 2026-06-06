@@ -34,7 +34,7 @@ struct DogHeroView: View {
     }
 
     private var heroContent: some View {
-        DogPhotoView(photoUrl: photoUrl, name: name, size: 120)
+        DogPhotoView(dogId: dogId, photoUrl: photoUrl, name: name, size: 120)
             .overlay(alignment: .bottomTrailing) {
                 if onPhotoSelected != nil {
                     Image(systemName: "camera.fill")

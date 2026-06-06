@@ -5,8 +5,10 @@ struct VoiceRecordButton: View {
     var isProcessing = false
     let onRecordingComplete: (Data) async -> Void
 
+    @AppStorage("hasSeenVoiceIntro") private var hasSeenVoiceIntro = false
     @State private var recorder = AudioRecorderService()
     @State private var isRecording = false
+    @State private var showIntro = false
 
     var body: some View {
         Group {
@@ -32,15 +34,14 @@ struct VoiceRecordButton: View {
                 }
             } else {
                 Button {
-                    do {
-                        try recorder.startRecording()
-                        isRecording = true
-                    } catch {
-                        print("Recording failed: \(error)")
+                    if hasSeenVoiceIntro {
+                        beginRecording()
+                    } else {
+                        showIntro = true
                     }
                 } label: {
-                    Image(systemName: "plus")
-                        .font(.title2.weight(.semibold))
+                    Image(systemName: "mic.fill")
+                        .font(.title2)
                         .foregroundStyle(.white)
                         .frame(width: 56, height: 56)
                         .background(StarkTheme.primary)
@@ -50,5 +51,20 @@ struct VoiceRecordButton: View {
             }
         }
         .accessibilityLabel(isRecording ? "Stop recording" : "Record care update")
+        .sheet(isPresented: $showIntro) {
+            VoiceIntroSheet {
+                hasSeenVoiceIntro = true
+                showIntro = false
+            }
+        }
+    }
+
+    private func beginRecording() {
+        do {
+            try recorder.startRecording()
+            isRecording = true
+        } catch {
+            print("Recording failed: \(error)")
+        }
     }
 }

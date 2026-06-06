@@ -35,10 +35,6 @@ struct CareTabView: View {
         @Bindable var session = session
 
         VStack(spacing: 0) {
-            CareSubNavView(selection: $session.careSubTab)
-                .padding(.horizontal, 16)
-                .padding(.top, 8)
-
             Group {
                 switch session.careSubTab {
                 case .today:
