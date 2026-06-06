@@ -41,23 +41,22 @@ struct TodayView: View {
     private func content(payload: TodayPayload, dogId: String) -> some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 20) {
-                VStack(spacing: 8) {
-                    DogHeroView(dogId: dogId, photoUrl: payload.dog.photoUrl, name: payload.dog.name)
+                DogHeroView(
+                    dogId: dogId,
+                    photoUrl: payload.dog.photoUrl,
+                    name: payload.dog.name,
+                    date: CareDisplay.formatDisplayDate(payload.date)
+                )
 
-                    Text(CareDisplay.formatDisplayDate(payload.date))
+                if let summary = payload.dailyLog.summary {
+                    Text(summary)
                         .font(.subheadline)
                         .foregroundStyle(StarkTheme.mutedForeground)
-
-                    if let summary = payload.dailyLog.summary {
-                        Text(summary)
-                            .font(.subheadline)
-                            .foregroundStyle(StarkTheme.mutedForeground)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            .padding(.leading, 12)
-                            .overlay(alignment: .leading) {
-                                Rectangle().fill(StarkTheme.primary).frame(width: 2)
-                            }
-                    }
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(.leading, 12)
+                        .overlay(alignment: .leading) {
+                            Rectangle().fill(StarkTheme.primary).frame(width: 2)
+                        }
                 }
 
                 if let error {
@@ -100,6 +99,7 @@ struct TodayView: View {
             .padding(.horizontal, 16)
             .padding(.bottom, 24)
         }
+        .toolbar(.hidden, for: .navigationBar)
         .onAppear {
             registerVoiceRecord()
             startPollingIfNeeded(payload)

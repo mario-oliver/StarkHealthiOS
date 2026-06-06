@@ -59,6 +59,17 @@ struct APIClient {
         try await request(path: "v1/dogs/\(dogId)").data
     }
 
+    func fetchDogPhotoData(_ dogId: String) async throws -> Data {
+        let token = try await resolveToken()
+        var urlRequest = URLRequest(url: makeURL(path: "v1/dogs/\(dogId)/photo"))
+        urlRequest.httpMethod = "GET"
+        urlRequest.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+
+        let (data, response) = try await session.data(for: urlRequest)
+        try validate(response: response, data: data)
+        return data
+    }
+
     func updateDog(_ dogId: String, input: UpdateDogInput) async throws -> DogRecord {
         try await request(path: "v1/dogs/\(dogId)", method: "PATCH", body: input).data
     }

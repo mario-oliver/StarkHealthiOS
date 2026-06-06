@@ -5,6 +5,7 @@ struct DogHeroView: View {
     let dogId: String
     let photoUrl: String?
     let name: String
+    var date: String?
     var onPhotoSelected: ((Data) async -> Void)?
 
     @State private var pickerItem: PhotosPickerItem?
@@ -30,7 +31,16 @@ struct DogHeroView: View {
             Text(name)
                 .font(.title2.bold())
                 .foregroundStyle(StarkTheme.foreground)
+                .multilineTextAlignment(.center)
+
+            if let date {
+                Text(date)
+                    .font(.subheadline)
+                    .foregroundStyle(StarkTheme.mutedForeground)
+                    .multilineTextAlignment(.center)
+            }
         }
+        .frame(maxWidth: .infinity)
     }
 
     private var heroContent: some View {

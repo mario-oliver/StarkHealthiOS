@@ -8,31 +8,44 @@ final class DogPhotoLoader {
     var isLoading = false
     var failed = false
 
-    private var loadedURL: String?
+    private var loadedKey: String?
     private var didRetry = false
 
-    func load(urlString: String?, dogId: String?, refreshURL: (@Sendable () async -> String?)?) async {
-        guard let urlString, !urlString.isEmpty else {
-            reset()
-            failed = true
-            return
-        }
-
-        if urlString == loadedURL, image != nil { return }
+    func load(
+        dogId: String?,
+        photoUrl: String?,
+        fetchAuthenticated: (@Sendable () async throws -> Data)?,
+        fetchPresigned: (@Sendable () async -> String?)?
+    ) async {
+        let key = "\(dogId ?? "")|\(photoUrl ?? "")"
+        if key == loadedKey, image != nil { return }
 
         isLoading = true
         failed = false
 
-        if await fetchImage(from: urlString) {
-            loadedURL = urlString
+        if let dogId, let fetchAuthenticated {
+            if await loadFromData(key: key, loader: fetchAuthenticated) {
+                isLoading = false
+                return
+            }
+        }
+
+        if let fetchPresigned, let freshUrl = await fetchPresigned(), await loadFromURL(freshUrl) {
+            loadedKey = key
             isLoading = false
             return
         }
 
-        if let dogId, let refreshURL, !didRetry {
+        if let photoUrl, await loadFromURL(photoUrl) {
+            loadedKey = key
+            isLoading = false
+            return
+        }
+
+        if let dogId, let fetchPresigned, !didRetry {
             didRetry = true
-            if let fresh = await refreshURL(), fresh != urlString, await fetchImage(from: fresh) {
-                loadedURL = fresh
+            if let freshUrl = await fetchPresigned(), freshUrl != photoUrl, await loadFromURL(freshUrl) {
+                loadedKey = key
                 isLoading = false
                 return
             }
@@ -45,13 +58,26 @@ final class DogPhotoLoader {
 
     func reset() {
         image = nil
-        loadedURL = nil
+        loadedKey = nil
         didRetry = false
         failed = false
         isLoading = false
     }
 
-    private func fetchImage(from urlString: String) async -> Bool {
+    private func loadFromData(key: String, loader: () async throws -> Data) async -> Bool {
+        do {
+            let data = try await loader()
+            guard let uiImage = UIImage(data: data) else { return false }
+            image = uiImage
+            loadedKey = key
+            failed = false
+            return true
+        } catch {
+            return false
+        }
+    }
+
+    private func loadFromURL(_ urlString: String) async -> Bool {
         guard let url = URL(string: urlString) else { return false }
 
         var request = URLRequest(url: url)
@@ -64,6 +90,7 @@ final class DogPhotoLoader {
             }
             guard let uiImage = UIImage(data: data) else { return false }
             image = uiImage
+            failed = false
             return true
         } catch {
             return false
@@ -97,12 +124,20 @@ struct DogPhotoView: View {
         .frame(width: size, height: size)
         .clipShape(Circle())
         .overlay(Circle().stroke(StarkTheme.primary.opacity(0.2), lineWidth: 1))
-        .task(id: photoUrl) {
+        .task(id: "\(dogId ?? "")|\(photoUrl ?? "")") {
             loader.reset()
-            await loader.load(urlString: photoUrl, dogId: dogId) {
-                guard let dogId else { return nil }
-                return try? await session.apiClient.getDog(dogId).photoUrl
-            }
+            let apiClient = session.apiClient
+            let resolvedDogId = dogId
+            await loader.load(
+                dogId: resolvedDogId,
+                photoUrl: photoUrl,
+                fetchAuthenticated: resolvedDogId.map { id in
+                    { try await apiClient.fetchDogPhotoData(id) }
+                },
+                fetchPresigned: resolvedDogId.map { id in
+                    { try? await apiClient.getDog(id).photoUrl }
+                }
+            )
         }
     }
 
