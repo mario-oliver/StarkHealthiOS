@@ -52,7 +52,7 @@ struct BucketDetailView: View {
     var body: some View {
         Group {
             if loading && payload == nil {
-                ProgressView("Loading…")
+                SpriteOverlayView(preset: .dailyPlanLoading)
             } else if let payload, let bucketData {
                 ScrollView {
                     VStack(alignment: .leading, spacing: 16) {
@@ -154,6 +154,11 @@ struct BucketDetailView: View {
         }
         .navigationTitle(title)
         .background(StarkTheme.background)
+        .overlay {
+            if isTranscribing || session.voiceRecord.isProcessing {
+                SpriteOverlayView(preset: .voiceProcessing)
+            }
+        }
         .task { await loadToday() }
         .onDisappear { pollTask?.cancel() }
     }
