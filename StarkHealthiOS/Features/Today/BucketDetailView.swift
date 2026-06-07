@@ -94,9 +94,7 @@ struct BucketDetailView: View {
                         }
 
                         if bucketData.tasks.isEmpty {
-                            Text("No tasks yet for this bucket.")
-                                .font(.subheadline)
-                                .foregroundStyle(StarkTheme.mutedForeground)
+                            SpriteOverlayView(preset: .emptyState, mode: .inline, size: .small)
                         }
 
                         if !bucketData.observations.isEmpty {
@@ -155,7 +153,9 @@ struct BucketDetailView: View {
         .navigationTitle(title)
         .background(StarkTheme.background)
         .overlay {
-            if isTranscribing || session.voiceRecord.isProcessing {
+            if session.voiceRecord.isRecording {
+                SpriteOverlayView(preset: .voiceListening, size: .small)
+            } else if isTranscribing || session.voiceRecord.isProcessing {
                 SpriteOverlayView(preset: .voiceProcessing)
             }
         }

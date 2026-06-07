@@ -2,14 +2,27 @@
 name: stark-sprite-companion
 description: >-
   Guides agents through Stark Health's three-layer dog sprite system (Catalog →
-  Renderer → Overlay) on iOS and web. Use when adding loading states, empty
-  states, voice UX, exercise completion moments, sprite presets, new animations,
-  or any StarkSprite / SpriteOverlay integration in StarkHealthiOS or stark-sesh.
+  Renderer → Overlay) on iOS and web. Use when adding loading states, saving
+  notes, voice UX, empty states, exercise completion, marketing sprites, or any
+  StarkSprite / SpriteOverlay integration. Includes preset cheat sheet and wired
+  use-case reference in use-cases.md.
 ---
 
 # Stark Sprite Companion System
 
 Premium companion layer — not a game mascot. Sprites reduce anxiety during loading and warm care routines. Use **selectively**; do not replace every spinner or celebrate every tap.
+
+## Start here for new workflows
+
+**Read [use-cases.md](use-cases.md) first** when wiring a new screen or flow. It contains:
+
+- Decision flowchart (load → save → voice → empty → error → marketing)
+- Preset cheat sheet with animation, mode, and anti-patterns
+- Animation mood guide (`idle`, `run`, `bark`, etc.)
+- Table of every file where sprites are already wired (copy those patterns)
+- Stub presets ready to wire later
+
+For step-by-step scenarios, see [examples.md](examples.md).
 
 ## Three-layer stack
 
@@ -42,6 +55,7 @@ Layer 1 — Catalog   SpriteAnimationCatalog / SPRITE_ANIMATION_DEFINITIONS  (fp
 | Presets | `Models/SpritePreset.swift` |
 | Renderer | `Components/Sprite/StarkSpriteView.swift` |
 | Overlay | `Components/Sprite/SpriteOverlayView.swift` |
+| Completion flash | `Components/Sprite/SpriteCompletionFlashView.swift` |
 | Assets | `Assets.xcassets/Sprites/Stark/{animation}/{name}.imageset/` |
 | Asset docs | `Assets.xcassets/Sprites/README.md` |
 
@@ -55,6 +69,7 @@ Layer 1 — Catalog   SpriteAnimationCatalog / SPRITE_ANIMATION_DEFINITIONS  (fp
 | Hook | `lib/sprites/use-sprite-animation.ts` |
 | Renderer | `components/sprite/StarkSprite.tsx` |
 | Overlay | `components/sprite/SpriteOverlay.tsx` |
+| Completion flash | `components/sprite/SpriteCompletionFlash.tsx` |
 | Assets | `public/sprites/stark/{animation}/{animation}_{NNN}.png` |
 
 ## Agent decision workflow
@@ -197,16 +212,64 @@ Frame naming: `{animation}_{NNN}` with zero-padded three digits (`idle_001`).
 | Add celebration overlay on every checkbox toggle | Use `exerciseComplete` inline sparingly |
 | Create a one-off sprite component in a feature folder | Use `StarkSprite` / `SpriteOverlay` |
 | iOS-only preset without web mirror | Update both preset registries |
+| Use generic `busy` for note saves | Use `savingNote` preset only when `body.notes` is set |
+
+## Shared helpers
+
+| Helper | Path (web) | Path (iOS) | Use |
+|--------|--------------|------------|-----|
+| `pickCompletionAnimation` | `lib/sprites/pick-completion-animation.ts` | `Utilities/SpriteCompletionAnimation.swift` | Rotate sitA/sitB/playbow by entity id |
+| `SpriteCompletionFlash` | `components/sprite/SpriteCompletionFlash.tsx` | `Components/Sprite/SpriteCompletionFlashView.swift` | Brief inline reward after COMPLETED |
+
+```tsx
+<SpriteCompletionFlash visible={showCompletion} seed={task.id} onDismiss={() => setShowCompletion(false)} />
+```
+
+## Voice listening
+
+- **Web:** `VoiceRecordBar` shows `voiceListening` inline while `isRecording`
+- **iOS:** `VoiceRecordCoordinator.isRecording` set by `VoiceRecordButton`; Today/BucketDetail overlays prefer listening over processing
+
+## Saving notes vs busy
+
+Only show `savingNote` when persisting `notes` — not on status/checkbox updates:
+
+```tsx
+const isNoteSave = body.notes !== undefined
+if (isNoteSave) setSavingNote(true)
+// ...
+{savingNote && <SpriteOverlay preset="savingNote" />}
+```
+
+## Marketing hero
+
+Corner-badge companion (no preset — direct `StarkSprite`):
+
+```tsx
+<div className="absolute -top-6 -right-4 pointer-events-none">
+  <StarkSprite animation="idle" size="small" />
+</div>
+```
 
 ## Existing integrations (reference)
 
 | Screen | Preset | Trigger |
 |--------|--------|---------|
-| `TodayView` / `TodayPageClient` | `dailyPlanLoading` | Initial load |
-| `TodayView` / `TodayPageClient` | `voiceProcessing` | Transcribing or notes processing |
-| `BucketDetailView` / `BucketDetailClient` | `dailyPlanLoading`, `voiceProcessing` | Same |
-| `BootstrapView` | `dailyPlanLoading` (custom message) | App bootstrap |
+| `TodayView` / `TodayPageClient` | `dailyPlanLoading`, `voiceListening`, `voiceProcessing`, `errorRetry` | Load, record, transcribe, fatal error |
+| `BucketDetailView` / `BucketDetailClient` | Same + `emptyState` | Bucket empty tasks |
+| `BootstrapView` | `dailyPlanLoading`, `errorRetry` | Bootstrap / failure |
+| `HistoryView` / `HistoryClient` | `dailyPlanLoading`, `emptyState` | Fetch / no logs |
+| `TasksPageClient` / `ExercisesView` | `dailyPlanLoading`, `emptyState` | Routine & schedule |
+| `CalendarPageClient` / `CalendarView` | `dailyPlanLoading` | Month fetch |
+| `CalendarDayPanel` | `dailyPlanLoading`, `emptyState`, `errorRetry` | Day panel |
+| `ProfileClient` / `ProfileView` | `dailyPlanLoading` | Profile fetch |
+| `TaskRow` / `TaskRowView` | `savingNote`, completion flash | Note save / mark done |
+| `MovementRow` / `ActionRow` | Same | Movement/action completion |
+| `VoiceRecordBar` | `voiceListening` | Active recording |
+| `MarketingHero` | `StarkSprite idle` (corner badge) | Landing hero |
+| Redirect pages (`/today`, etc.) | `dailyPlanLoading` | Dog resolution |
 
 ## Additional examples
 
-For full before/after agent scenarios, see [examples.md](examples.md).
+- **[use-cases.md](use-cases.md)** — preset cheat sheet, decision flowchart, wired locations
+- **[examples.md](examples.md)** — step-by-step agent scenarios

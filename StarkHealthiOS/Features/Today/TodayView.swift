@@ -21,16 +21,19 @@ struct TodayView: View {
                 content(payload: payload, dogId: dogId)
             } else {
                 VStack(spacing: 12) {
-                    Text(error ?? "Could not load today's care.")
-                        .foregroundStyle(.red)
+                    SpriteOverlayView(preset: .errorRetry, mode: .inline, size: .small)
                     Button("Retry") { Task { await loadToday() } }
+                        .buttonStyle(.borderedProminent)
+                        .tint(StarkTheme.primary)
                 }
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(StarkTheme.background)
         .overlay {
-            if isTranscribing || session.voiceRecord.isProcessing {
+            if session.voiceRecord.isRecording {
+                SpriteOverlayView(preset: .voiceListening, size: .small)
+            } else if isTranscribing || session.voiceRecord.isProcessing {
                 SpriteOverlayView(preset: .voiceProcessing)
             }
         }

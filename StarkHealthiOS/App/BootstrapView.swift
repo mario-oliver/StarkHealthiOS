@@ -11,7 +11,7 @@ struct BootstrapView: View {
                 SpriteOverlayView(preset: .dailyPlanLoading, message: "Opening Stark's care log…")
             } else if let error = session.bootstrapError {
                 VStack(spacing: 12) {
-                    Text(error).foregroundStyle(.red).multilineTextAlignment(.center)
+                    SpriteOverlayView(preset: .errorRetry, mode: .inline, size: .small)
                     Button("Retry") { Task { await session.bootstrap() } }
                         .buttonStyle(.borderedProminent)
                         .tint(StarkTheme.primary)
