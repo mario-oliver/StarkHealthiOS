@@ -157,9 +157,7 @@ struct TodayView: View {
     }
 
     private func hasProcessingNotes(_ payload: TodayPayload) -> Bool {
-        payload.dailyLog.voiceNotes.contains {
-            $0.processingStatus == .pending || $0.processingStatus == .transcribed
-        }
+        payload.dailyLog.voiceNotes.contains { $0.processingStatus == .transcribed }
     }
 
     private func startPollingIfNeeded(_ payload: TodayPayload) {
