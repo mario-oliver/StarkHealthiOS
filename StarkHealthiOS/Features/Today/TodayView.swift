@@ -16,7 +16,7 @@ struct TodayView: View {
     var body: some View {
         Group {
             if loading && payload == nil {
-                ProgressView("Loading today's care…")
+                SpriteOverlayView(preset: .dailyPlanLoading)
             } else if let payload, let dogId {
                 content(payload: payload, dogId: dogId)
             } else {
@@ -29,6 +29,11 @@ struct TodayView: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(StarkTheme.background)
+        .overlay {
+            if isTranscribing || session.voiceRecord.isProcessing {
+                SpriteOverlayView(preset: .voiceProcessing)
+            }
+        }
         .task(id: dogId) {
             await loadToday()
         }

@@ -8,7 +8,7 @@ struct BootstrapView: View {
     var body: some View {
         Group {
             if session.isBootstrapping {
-                ProgressView("Opening Stark's care log…")
+                SpriteOverlayView(preset: .dailyPlanLoading, message: "Opening Stark's care log…")
             } else if let error = session.bootstrapError {
                 VStack(spacing: 12) {
                     Text(error).foregroundStyle(.red).multilineTextAlignment(.center)
@@ -18,7 +18,7 @@ struct BootstrapView: View {
                 }
                 .padding()
             } else {
-                ProgressView("Opening Stark's care log…")
+                SpriteOverlayView(preset: .dailyPlanLoading, message: "Opening Stark's care log…")
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
