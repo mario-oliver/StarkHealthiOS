@@ -8,13 +8,13 @@ struct SpriteAnimationDefinition: Sendable {
 
 enum SpriteAnimationCatalog {
     static let definitions: [SpriteAnimation: SpriteAnimationDefinition] = [
-        .idle: SpriteAnimationDefinition(frameCount: 5, fps: 6, loops: true),
-        .run: SpriteAnimationDefinition(frameCount: 3, fps: 10, loops: true),
-        .walk: SpriteAnimationDefinition(frameCount: 4, fps: 8, loops: true),
-        .sitA: SpriteAnimationDefinition(frameCount: 2, fps: 4, loops: false),
-        .sitB: SpriteAnimationDefinition(frameCount: 2, fps: 4, loops: false),
-        .bark: SpriteAnimationDefinition(frameCount: 2, fps: 6, loops: true),
-        .playbow: SpriteAnimationDefinition(frameCount: 2, fps: 5, loops: false),
+        .idle: SpriteAnimationDefinition(frameCount: 5, fps: 4, loops: true),
+        .run: SpriteAnimationDefinition(frameCount: 3, fps: 6, loops: true),
+        .walk: SpriteAnimationDefinition(frameCount: 4, fps: 5, loops: true),
+        .sitA: SpriteAnimationDefinition(frameCount: 2, fps: 3, loops: false),
+        .sitB: SpriteAnimationDefinition(frameCount: 2, fps: 3, loops: false),
+        .bark: SpriteAnimationDefinition(frameCount: 2, fps: 4, loops: true),
+        .playbow: SpriteAnimationDefinition(frameCount: 2, fps: 3, loops: false),
     ]
 
     static func definition(for animation: SpriteAnimation) -> SpriteAnimationDefinition {

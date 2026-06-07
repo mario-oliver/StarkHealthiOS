@@ -1,6 +1,7 @@
 import Foundation
 
 enum SpritePreset: Sendable {
+    case careLogOpening
     case dailyPlanLoading
     case voiceListening
     case voiceProcessing
@@ -23,9 +24,17 @@ enum SpritePreset: Sendable {
 
     var configuration: Configuration {
         switch self {
-        case .dailyPlanLoading:
+        case .careLogOpening:
             Configuration(
                 animation: .run,
+                message: "Opening Stark's care log…",
+                subtext: nil,
+                mode: .blocking,
+                background: .dimmed
+            )
+        case .dailyPlanLoading:
+            Configuration(
+                animation: .idle,
                 message: "Fetching today's PT plan…",
                 subtext: nil,
                 mode: .blocking,
@@ -33,7 +42,7 @@ enum SpritePreset: Sendable {
             )
         case .voiceListening:
             Configuration(
-                animation: .idle,
+                animation: .bark,
                 message: "Listening…",
                 subtext: "Tell Stark what happened.",
                 mode: .inline,
@@ -41,7 +50,7 @@ enum SpritePreset: Sendable {
             )
         case .voiceProcessing:
             Configuration(
-                animation: .run,
+                animation: .bark,
                 message: "Understanding your note…",
                 subtext: "Matching this to today's PT plan.",
                 mode: .blocking,
@@ -57,7 +66,7 @@ enum SpritePreset: Sendable {
             )
         case .savingNote:
             Configuration(
-                animation: .bark,
+                animation: .walk,
                 message: "Saving Stark's update…",
                 subtext: nil,
                 mode: .blocking,

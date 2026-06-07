@@ -230,10 +230,10 @@ Do not replace every feature-card icon unless explicitly requested.
 
 **User request:** "Sprite while resolving active dog."
 
-Use `dailyPlanLoading` with optional message override:
+Use `careLogOpening` for care log entry:
 
 ```tsx
-<SpriteOverlay preset="dailyPlanLoading" message="Opening Stark's care log…" mode="blocking" />
+<SpriteOverlay preset="careLogOpening" mode="blocking" />
 ```
 
 Files: `app/(dashboard)/today/page.tsx`, `BootstrapView.swift`
