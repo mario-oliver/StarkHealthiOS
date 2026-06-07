@@ -2,7 +2,9 @@ import SwiftUI
 
 struct ProfileView: View {
     @Environment(SessionStore.self) private var session
+    @Environment(EntitlementStore.self) private var entitlements
 
+    @State private var showPaywall = false
     @State private var dog: DogRecord?
     @State private var editing = false
     @State private var form = DogProfileFormValues.empty()
@@ -30,10 +32,39 @@ struct ProfileView: View {
         }
         .background(StarkTheme.background)
         .task(id: dogId) { await loadDog() }
+        .sheet(isPresented: $showPaywall) {
+            PaywallView()
+        }
+    }
+
+    private var subscriptionSection: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("Subscription").font(.caption).foregroundStyle(StarkTheme.mutedForeground)
+            if entitlements.hasPro {
+                Label("Pro plan active", systemImage: "checkmark.seal.fill")
+                    .foregroundStyle(StarkTheme.primary)
+            } else if entitlements.hasBasic {
+                Label("Basic plan active", systemImage: "checkmark.circle.fill")
+            } else {
+                Text("No active subscription")
+                    .font(.subheadline)
+                    .foregroundStyle(StarkTheme.mutedForeground)
+            }
+            Button(entitlements.hasPro || entitlements.hasBasic ? "Manage subscription" : "View plans") {
+                showPaywall = true
+            }
+            .buttonStyle(.bordered)
+        }
+        .padding()
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Color(.secondarySystemBackground))
+        .clipShape(RoundedRectangle(cornerRadius: 12))
     }
 
     private var readOnly: some View {
         VStack(alignment: .leading, spacing: 16) {
+            subscriptionSection
+
             if let dog, let dogId {
                 DogHeroView(
                     dogId: dogId,
