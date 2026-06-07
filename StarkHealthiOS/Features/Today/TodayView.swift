@@ -16,19 +16,27 @@ struct TodayView: View {
     var body: some View {
         Group {
             if loading && payload == nil {
-                ProgressView("Loading today's care…")
+                SpriteOverlayView(preset: .dailyPlanLoading)
             } else if let payload, let dogId {
                 content(payload: payload, dogId: dogId)
             } else {
                 VStack(spacing: 12) {
-                    Text(error ?? "Could not load today's care.")
-                        .foregroundStyle(.red)
+                    SpriteOverlayView(preset: .errorRetry, mode: .inline, size: .small)
                     Button("Retry") { Task { await loadToday() } }
+                        .buttonStyle(.borderedProminent)
+                        .tint(StarkTheme.primary)
                 }
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(StarkTheme.background)
+        .overlay {
+            if session.voiceRecord.isRecording {
+                SpriteOverlayView(preset: .voiceListening, size: .small)
+            } else if isTranscribing || session.voiceRecord.isProcessing {
+                SpriteOverlayView(preset: .voiceProcessing)
+            }
+        }
         .task(id: dogId) {
             await loadToday()
         }
@@ -149,9 +157,7 @@ struct TodayView: View {
     }
 
     private func hasProcessingNotes(_ payload: TodayPayload) -> Bool {
-        payload.dailyLog.voiceNotes.contains {
-            $0.processingStatus == .pending || $0.processingStatus == .transcribed
-        }
+        payload.dailyLog.voiceNotes.contains { $0.processingStatus == .transcribed }
     }
 
     private func startPollingIfNeeded(_ payload: TodayPayload) {

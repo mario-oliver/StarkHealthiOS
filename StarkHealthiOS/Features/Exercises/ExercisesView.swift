@@ -39,7 +39,9 @@ struct ExercisesView: View {
                 }
 
                 if loading {
-                    ProgressView()
+                    SpriteOverlayView(preset: .dailyPlanLoading, mode: .inline, size: .small)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 24)
                 } else {
                     switch tab {
                     case .routine:
@@ -125,8 +127,7 @@ struct ExercisesView: View {
             }
 
             if filteredRoutineActions.isEmpty {
-                Text("No exercises in this bucket yet.")
-                    .foregroundStyle(StarkTheme.mutedForeground)
+                SpriteOverlayView(preset: .emptyState, mode: .inline, size: .small)
             }
         }
     }
@@ -143,13 +144,18 @@ struct ExercisesView: View {
             }
 
             if let schedulePayload, let dogId {
-                ForEach(allScheduleTasks(from: schedulePayload)) { task in
-                    TaskRowView(
-                        task: task,
-                        dogId: dogId,
-                        apiClient: session.apiClient,
-                        onUpdated: { await loadSchedule() }
-                    )
+                let tasks = allScheduleTasks(from: schedulePayload)
+                if tasks.isEmpty {
+                    SpriteOverlayView(preset: .emptyState, mode: .inline, size: .small)
+                } else {
+                    ForEach(tasks) { task in
+                        TaskRowView(
+                            task: task,
+                            dogId: dogId,
+                            apiClient: session.apiClient,
+                            onUpdated: { await loadSchedule() }
+                        )
+                    }
                 }
             }
         }

@@ -33,8 +33,15 @@ final class SessionStore {
     var isBootstrapping = false
     var bootstrapError: String?
 
-    var apiClient = APIClient()
+    var apiClient: APIClient
     var voiceRecord = VoiceRecordCoordinator()
+    var entitlementStore: EntitlementStore
+
+    init() {
+        let client = APIClient()
+        apiClient = client
+        entitlementStore = EntitlementStore(apiClient: client)
+    }
 
     var activeDog: DogRecord? {
         guard let activeDogId else { return nil }
@@ -45,6 +52,10 @@ final class SessionStore {
         apiClient.tokenProvider = {
             try await clerk.auth.getToken()
         }
+        entitlementStore = EntitlementStore(apiClient: apiClient)
+        StoreKitService.shared.startListening { [weak self] verification, transaction in
+            await self?.entitlementStore.handleTransactionUpdate(verification, transaction: transaction)
+        }
     }
 
     func bootstrap() async {
@@ -53,7 +64,10 @@ final class SessionStore {
         defer { isBootstrapping = false }
 
         do {
-            let loaded = try await apiClient.listDogs()
+            async let dogsTask = apiClient.listDogs()
+            async let entitlementTask: Void = entitlementStore.refresh()
+            let loaded = try await dogsTask
+            await entitlementTask
             dogs = loaded
             if loaded.isEmpty {
                 flow = .onboarding

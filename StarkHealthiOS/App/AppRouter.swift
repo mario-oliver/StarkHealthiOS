@@ -23,6 +23,7 @@ struct AppRouter: View {
             }
         }
         .environment(session)
+        .environment(session.entitlementStore)
         .onChange(of: clerk.user?.id) { _, userId in
             if userId != nil {
                 session.flow = .bootstrap

@@ -52,7 +52,7 @@ struct BucketDetailView: View {
     var body: some View {
         Group {
             if loading && payload == nil {
-                ProgressView("Loading…")
+                SpriteOverlayView(preset: .dailyPlanLoading)
             } else if let payload, let bucketData {
                 ScrollView {
                     VStack(alignment: .leading, spacing: 16) {
@@ -94,9 +94,7 @@ struct BucketDetailView: View {
                         }
 
                         if bucketData.tasks.isEmpty {
-                            Text("No tasks yet for this bucket.")
-                                .font(.subheadline)
-                                .foregroundStyle(StarkTheme.mutedForeground)
+                            SpriteOverlayView(preset: .emptyState, mode: .inline, size: .small)
                         }
 
                         if !bucketData.observations.isEmpty {
@@ -154,6 +152,13 @@ struct BucketDetailView: View {
         }
         .navigationTitle(title)
         .background(StarkTheme.background)
+        .overlay {
+            if session.voiceRecord.isRecording {
+                SpriteOverlayView(preset: .voiceListening, size: .small)
+            } else if isTranscribing || session.voiceRecord.isProcessing {
+                SpriteOverlayView(preset: .voiceProcessing)
+            }
+        }
         .task { await loadToday() }
         .onDisappear { pollTask?.cancel() }
     }
@@ -216,9 +221,7 @@ struct BucketDetailView: View {
     }
 
     private func hasProcessingNotes(_ payload: TodayPayload) -> Bool {
-        payload.dailyLog.voiceNotes.contains {
-            $0.processingStatus == .pending || $0.processingStatus == .transcribed
-        }
+        payload.dailyLog.voiceNotes.contains { $0.processingStatus == .transcribed }
     }
 
     private func startPollingIfNeeded(_ payload: TodayPayload) {

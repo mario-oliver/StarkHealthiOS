@@ -8,17 +8,17 @@ struct BootstrapView: View {
     var body: some View {
         Group {
             if session.isBootstrapping {
-                ProgressView("Opening Stark's care log…")
+                SpriteOverlayView(preset: .careLogOpening)
             } else if let error = session.bootstrapError {
                 VStack(spacing: 12) {
-                    Text(error).foregroundStyle(.red).multilineTextAlignment(.center)
+                    SpriteOverlayView(preset: .errorRetry, mode: .inline, size: .small)
                     Button("Retry") { Task { await session.bootstrap() } }
                         .buttonStyle(.borderedProminent)
                         .tint(StarkTheme.primary)
                 }
                 .padding()
             } else {
-                ProgressView("Opening Stark's care log…")
+                SpriteOverlayView(preset: .careLogOpening)
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)

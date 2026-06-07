@@ -7,6 +7,8 @@ struct TaskRowView: View {
     let onUpdated: () async -> Void
 
     @State private var busy = false
+    @State private var savingNote = false
+    @State private var showCompletion = false
     @State private var editingNote = false
     @State private var note = ""
 
@@ -70,6 +72,12 @@ struct TaskRowView: View {
                         .foregroundStyle(StarkTheme.mutedForeground)
                 }
 
+                SpriteCompletionFlashView(
+                    visible: showCompletion,
+                    seed: task.id,
+                    onDismiss: { showCompletion = false }
+                )
+
                 if let notes = task.notes, !editingNote {
                     Text(notes)
                         .font(.caption)
@@ -132,6 +140,10 @@ struct TaskRowView: View {
         .clipShape(RoundedRectangle(cornerRadius: 12))
         .overlay(RoundedRectangle(cornerRadius: 12).stroke(StarkTheme.border))
         .opacity(isSkipped ? 0.6 : (isCompleted ? 0.85 : 1))
+        .fullScreenCover(isPresented: $savingNote) {
+            SpriteOverlayView(preset: .savingNote)
+                .background(StarkTheme.background)
+        }
     }
 
     private var completionLine: String {
@@ -158,8 +170,20 @@ struct TaskRowView: View {
         notes: String? = nil,
         needsReview: Bool? = nil
     ) async {
-        busy = true
-        defer { busy = false }
+        let isNoteSave = notes != nil
+        let isCompletion = status == .completed
+        if isNoteSave {
+            savingNote = true
+        } else {
+            busy = true
+        }
+        defer {
+            if isNoteSave {
+                savingNote = false
+            } else {
+                busy = false
+            }
+        }
         do {
             _ = try await apiClient.updateDailyTask(
                 dogId,
@@ -167,6 +191,9 @@ struct TaskRowView: View {
                 body: UpdateDailyTaskBody(status: status, notes: notes, needsReview: needsReview)
             )
             await onUpdated()
+            if isCompletion {
+                showCompletion = true
+            }
         } catch {
             // Parent handles errors via refresh
         }
