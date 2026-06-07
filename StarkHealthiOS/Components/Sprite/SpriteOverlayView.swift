@@ -17,6 +17,8 @@ struct SpriteOverlayView: View {
         preset: SpritePreset,
         message: String? = nil,
         subtext: String? = nil,
+        mode: SpriteOverlayMode? = nil,
+        background: SpriteBackground? = nil,
         size: SpriteSize = .medium,
         loop: Bool? = nil,
         animated: Bool? = nil,
@@ -26,8 +28,8 @@ struct SpriteOverlayView: View {
         self.animation = config.animation
         self.message = message ?? config.message
         self.subtext = subtext ?? config.subtext
-        self.mode = config.mode
-        self.background = config.background
+        self.mode = mode ?? config.mode
+        self.background = background ?? config.background
         self.size = size
         self.loop = loop
         self.animated = animated

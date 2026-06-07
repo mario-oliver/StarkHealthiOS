@@ -91,11 +91,12 @@ Copy this checklist when adding sprite UX:
 
 | Preset | Animation | Mode | Use when |
 |--------|-----------|------|----------|
-| `dailyPlanLoading` | run | blocking | Initial fetch of today's plan |
-| `voiceListening` | idle | inline | Mic active, awaiting speech |
-| `voiceProcessing` | run | blocking | Transcribing / matching to plan |
+| `careLogOpening` | run | blocking | App bootstrap / `/today` redirect — entering the care log |
+| `dailyPlanLoading` | idle | blocking | In-app fetch of today's plan, profile, calendar, etc. |
+| `voiceListening` | bark | inline | Mic active, awaiting speech |
+| `voiceProcessing` | bark | blocking | Transcribing / matching to plan |
 | `exerciseComplete` | sitA | inline | Task or movement checked off |
-| `savingNote` | bark | blocking | Persisting a recovery note |
+| `savingNote` | walk | blocking | Persisting a recovery note |
 | `recoveryScoring` | walk | blocking | Computing bucket scores |
 | `emptyState` | idle | inline | No activity logged yet |
 | `notificationSetup` | sitA | inline | Reminder onboarding |
@@ -166,10 +167,10 @@ if loading && payload == nil {
 }
 ```
 
-### iOS — preset with message override
+### iOS — care log entry
 
 ```swift
-SpriteOverlayView(preset: .dailyPlanLoading, message: "Opening Stark's care log…")
+SpriteOverlayView(preset: .careLogOpening)
 ```
 
 ## Adding a new preset (agent workflow)
@@ -257,7 +258,7 @@ Corner-badge companion (no preset — direct `StarkSprite`):
 |--------|--------|---------|
 | `TodayView` / `TodayPageClient` | `dailyPlanLoading`, `voiceListening`, `voiceProcessing`, `errorRetry` | Load, record, transcribe, fatal error |
 | `BucketDetailView` / `BucketDetailClient` | Same + `emptyState` | Bucket empty tasks |
-| `BootstrapView` | `dailyPlanLoading`, `errorRetry` | Bootstrap / failure |
+| `BootstrapView` | `careLogOpening`, `errorRetry` | Bootstrap / failure |
 | `HistoryView` / `HistoryClient` | `dailyPlanLoading`, `emptyState` | Fetch / no logs |
 | `TasksPageClient` / `ExercisesView` | `dailyPlanLoading`, `emptyState` | Routine & schedule |
 | `CalendarPageClient` / `CalendarView` | `dailyPlanLoading` | Month fetch |
@@ -267,7 +268,8 @@ Corner-badge companion (no preset — direct `StarkSprite`):
 | `MovementRow` / `ActionRow` | Same | Movement/action completion |
 | `VoiceRecordBar` | `voiceListening` | Active recording |
 | `MarketingHero` | `StarkSprite idle` (corner badge) | Landing hero |
-| Redirect pages (`/today`, etc.) | `dailyPlanLoading` | Dog resolution |
+| Redirect pages (`/today`) | `careLogOpening` | Care log entry |
+| Other redirect pages (`history`, etc.) | `dailyPlanLoading` | Dog resolution |
 
 ## Additional examples
 

@@ -6,7 +6,8 @@ Quick reference for new workflows. Read [SKILL.md](SKILL.md) for architecture. P
 
 ```
 New UI moment?
-├─ Full-screen initial fetch?        → dailyPlanLoading (blocking)
+├─ App bootstrap / care log entry?   → careLogOpening (blocking)
+├─ Full-screen in-app fetch?         → dailyPlanLoading (blocking)
 ├─ Inline/panel fetch?               → dailyPlanLoading (inline, size small)
 ├─ User recording voice?             → voiceListening (inline web bar / blocking iOS screen)
 ├─ Transcribing or processing voice? → voiceProcessing (blocking overlay)
@@ -22,10 +23,11 @@ New UI moment?
 
 | User situation | Preset | Animation | Mode | Size | Do NOT use for |
 |----------------|--------|-----------|------|------|----------------|
-| Opening app, Today tab, profile, calendar month, redirects | `dailyPlanLoading` | run | blocking or inline | medium / small | Button `busy`, row saves |
-| Mic open, awaiting speech | `voiceListening` | idle | inline (web) / blocking (iOS screen) | small | Processing/transcribe phase |
-| Uploading or matching voice note | `voiceProcessing` | run | blocking | medium | Mic button spinner |
-| Saving recovery note (notes field) | `savingNote` | bark | blocking | medium | Checkbox, skip, status toggle |
+| App bootstrap, `/today` redirect | `careLogOpening` | run | blocking | medium | In-app fetches, tab redirects |
+| In-app fetch (Today tab, profile, calendar, history, tasks) | `dailyPlanLoading` | idle | blocking or inline | medium / small | Button `busy`, row saves, care log entry |
+| Mic open, awaiting speech | `voiceListening` | bark | inline (web) / blocking (iOS screen) | small | Processing/transcribe phase |
+| Uploading or matching voice note | `voiceProcessing` | bark | blocking | medium | Mic button spinner |
+| Saving recovery note (notes field) | `savingNote` | walk | blocking | medium | Checkbox, skip, status toggle |
 | Exercise checked off | `SpriteCompletionFlash` | sitA/sitB/playbow (rotated) | inline | small | Skip, uncheck, every tap |
 | No logs, no tasks, empty bucket | `emptyState` | idle | inline | small | Loading state |
 | Network/load failed, calm retry | `errorRetry` | sitB | inline | medium | Inline caption errors mid-screen |
@@ -38,14 +40,21 @@ New UI moment?
 
 | Animation | Feels like | Good for |
 |-----------|------------|----------|
-| `idle` | Calm, present | Empty states, listening, marketing badge |
-| `run` | Active, working | Loading, voice processing |
-| `walk` | Steady progress | Recovery scoring, sync |
+| `idle` | Calm, present | In-app loading, empty states, marketing badge |
+| `run` | Active welcome | Care log entry only |
+| `walk` | Steady progress | Note saves, recovery scoring, sync |
 | `sitA` / `sitB` | Settled, attentive | Completion flash, errors (sitB), reminders |
-| `bark` | Short acknowledgment | Saving notes |
+| `bark` | Short acknowledgment | Voice recording and processing |
 | `playbow` | Warm invitation | Day complete, playful marketing |
 
 ## Where sprites already live (copy these patterns)
+
+### Care log entry (`careLogOpening`)
+
+| Location | File |
+|----------|------|
+| Web redirect | `app/(dashboard)/today/page.tsx` |
+| iOS bootstrap | `BootstrapView.swift` |
 
 ### Loading (`dailyPlanLoading`)
 
@@ -53,11 +62,10 @@ New UI moment?
 |----------|------|
 | Today / bucket detail | `TodayPageClient.tsx`, `BucketDetailClient.tsx`, `TodayView.swift`, `BucketDetailView.swift` |
 | History, tasks, calendar, profile | `HistoryClient.tsx`, `TasksPageClient.tsx`, `CalendarPageClient.tsx`, `ProfileClient.tsx` + iOS views |
-| Redirects | `app/(dashboard)/today/page.tsx`, `history`, `calendar`, `exercises`, `profile`, `tasks` |
-| Bootstrap | `BootstrapView.swift` |
+| Tab redirects | `history`, `calendar`, `exercises`, `profile`, `tasks` redirect pages |
 | Onboarding gate | `onboarding/page.tsx` |
 
-Message override examples: `"Opening Stark's care log…"`, `"Loading profile…"`, `"Loading plans…"`
+Message override examples: `"Loading profile…"`, `"Loading plans…"`
 
 ### Voice
 
