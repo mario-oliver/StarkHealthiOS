@@ -3,6 +3,7 @@ import SwiftUI
 struct VoiceRecordButton: View {
     var disabled = false
     var isProcessing = false
+    var voiceRecord: VoiceRecordCoordinator?
     let onRecordingComplete: (Data) async -> Void
 
     @AppStorage("hasSeenVoiceIntro") private var hasSeenVoiceIntro = false
@@ -20,7 +21,7 @@ struct VoiceRecordButton: View {
                     .clipShape(Circle())
             } else if isRecording {
                 Button {
-                    isRecording = false
+                    setRecording(false)
                     if let data = recorder.stopRecording() {
                         Task { await onRecordingComplete(data) }
                     }
@@ -62,9 +63,14 @@ struct VoiceRecordButton: View {
     private func beginRecording() {
         do {
             try recorder.startRecording()
-            isRecording = true
+            setRecording(true)
         } catch {
             print("Recording failed: \(error)")
         }
+    }
+
+    private func setRecording(_ recording: Bool) {
+        isRecording = recording
+        voiceRecord?.isRecording = recording
     }
 }

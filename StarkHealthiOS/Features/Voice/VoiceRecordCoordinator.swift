@@ -5,6 +5,7 @@ import Observation
 @Observable
 final class VoiceRecordCoordinator {
     var isProcessing = false
+    var isRecording = false
 
     private var handlers: [UUID: (Data) async -> Void] = [:]
     private var stack: [UUID] = []
@@ -21,6 +22,9 @@ final class VoiceRecordCoordinator {
     func deactivate(id: UUID) {
         handlers[id] = nil
         stack.removeAll { $0 == id }
+        if stack.isEmpty {
+            isRecording = false
+        }
     }
 
     func complete(_ data: Data) async {

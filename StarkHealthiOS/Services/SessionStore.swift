@@ -33,12 +33,14 @@ final class SessionStore {
     var isBootstrapping = false
     var bootstrapError: String?
 
-    var apiClient = APIClient()
+    var apiClient: APIClient
     var voiceRecord = VoiceRecordCoordinator()
     var entitlementStore: EntitlementStore
 
     init() {
-        entitlementStore = EntitlementStore(apiClient: apiClient)
+        let client = APIClient()
+        apiClient = client
+        entitlementStore = EntitlementStore(apiClient: client)
     }
 
     var activeDog: DogRecord? {

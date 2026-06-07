@@ -27,7 +27,7 @@ struct PaywallView: View {
                     }
 
                     if loading {
-                        ProgressView("Loading plans…")
+                        SpriteOverlayView(preset: .dailyPlanLoading, message: "Loading plans…", mode: .inline, size: .small)
                     } else if products.isEmpty {
                         Text("Subscription products are not configured yet.")
                             .foregroundStyle(StarkTheme.mutedForeground)

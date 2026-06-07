@@ -7,6 +7,7 @@ struct MovementRowView: View {
     let onUpdated: () async -> Void
 
     @State private var busy = false
+    @State private var showCompletion = false
     @State private var note = ""
     @State private var editingNote = false
 
@@ -27,6 +28,12 @@ struct MovementRowView: View {
             if let instructions = movement.instructions, !instructions.isEmpty {
                 Text(instructions).font(.caption).foregroundStyle(StarkTheme.mutedForeground)
             }
+
+            SpriteCompletionFlashView(
+                visible: showCompletion,
+                seed: movement.id,
+                onDismiss: { showCompletion = false }
+            )
 
             if movement.status != .completed {
                 ExerciseMeasurementView(
@@ -64,6 +71,9 @@ struct MovementRowView: View {
                 body: UpdateDailyActionStepBody(status: status, notes: note.nilIfEmpty)
             )
             await onUpdated()
+            if status == .completed {
+                showCompletion = true
+            }
         } catch {
             print("Movement update failed: \(error)")
         }

@@ -30,7 +30,8 @@ struct CalendarView: View {
                         onMonthChange: { visibleMonth = $0; Task { await loadCalendar() } }
                     )
                     if loading {
-                        ProgressView().frame(maxWidth: .infinity, minHeight: 200)
+                        SpriteOverlayView(preset: .dailyPlanLoading, mode: .inline, size: .small)
+                            .frame(maxWidth: .infinity, minHeight: 200)
                             .background(StarkTheme.background.opacity(0.6))
                     }
                 }

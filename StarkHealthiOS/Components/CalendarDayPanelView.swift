@@ -15,19 +15,24 @@ struct CalendarDayPanelView: View {
                 .font(.headline)
 
             if loading {
-                ProgressView()
+                SpriteOverlayView(preset: .dailyPlanLoading, mode: .inline, size: .small)
             } else if let payload {
                 Text("\(payload.progress.completed) of \(payload.progress.total) exercises done")
                     .font(.caption)
                     .foregroundStyle(StarkTheme.primary)
 
-                ForEach(allTasks(from: payload)) { task in
-                    TaskRowView(
-                        task: task,
-                        dogId: dogId,
-                        apiClient: apiClient,
-                        onUpdated: reload
-                    )
+                let tasks = allTasks(from: payload)
+                if tasks.isEmpty {
+                    SpriteOverlayView(preset: .emptyState, mode: .inline, size: .small)
+                } else {
+                    ForEach(tasks) { task in
+                        TaskRowView(
+                            task: task,
+                            dogId: dogId,
+                            apiClient: apiClient,
+                            onUpdated: reload
+                        )
+                    }
                 }
             }
         }

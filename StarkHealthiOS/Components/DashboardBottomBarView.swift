@@ -18,6 +18,7 @@ struct DashboardBottomBarView: View {
             if session.voiceRecord.isActive {
                 VoiceRecordButton(
                     isProcessing: session.voiceRecord.isProcessing,
+                    voiceRecord: session.voiceRecord,
                     onRecordingComplete: { data in
                         await session.voiceRecord.complete(data)
                     }

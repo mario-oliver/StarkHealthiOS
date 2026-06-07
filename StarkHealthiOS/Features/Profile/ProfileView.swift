@@ -21,7 +21,8 @@ struct ProfileView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 16) {
                 if dog == nil {
-                    ProgressView("Loading profile…")
+                    SpriteOverlayView(preset: .dailyPlanLoading, message: "Loading profile…")
+                        .frame(maxWidth: .infinity, minHeight: 200)
                 } else if editing {
                     editForm
                 } else {

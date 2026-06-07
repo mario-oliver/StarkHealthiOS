@@ -74,9 +74,48 @@ if items.isEmpty {
 
 **Do not:** Auto-show on every checkbox toggle without UX review.
 
+**Implemented pattern (preferred):** use `SpriteCompletionFlash` — rotates sitA/sitB/playbow by entity id, auto-dismisses:
+
+```tsx
+const [showCompletion, setShowCompletion] = useState(false)
+// after successful update({ status: 'COMPLETED' }):
+setShowCompletion(true)
+
+<SpriteCompletionFlash visible={showCompletion} seed={task.id} onDismiss={() => setShowCompletion(false)} />
+```
+
+```swift
+SpriteCompletionFlashView(visible: showCompletion, seed: task.id, onDismiss: { showCompletion = false })
+```
+
 ---
 
-## Scenario 4: New product moment → new preset
+## Scenario 4: Saving a recovery note
+
+**User request:** "Show the dog while saving a note."
+
+**Agent steps:**
+
+1. Use `savingNote` preset — **only** when persisting `notes`, not checkbox/status updates.
+2. Blocking overlay; distinguish from generic `busy`.
+
+```tsx
+const isNoteSave = body.notes !== undefined
+if (isNoteSave) setSavingNote(true)
+// ...
+{savingNote && <SpriteOverlay preset="savingNote" />}
+```
+
+```swift
+// TaskRowView.swift — fullScreenCover when savingNote
+.fullScreenCover(isPresented: $savingNote) {
+    SpriteOverlayView(preset: .savingNote)
+}
+```
+
+---
+
+## Scenario 5: New product moment → new preset
 
 **User request:** "When syncing with another caregiver, show a walk animation."
 
@@ -97,7 +136,7 @@ If truly new:
 
 ---
 
-## Scenario 5: New animation state
+## Scenario 6: New animation state
 
 **User request:** "Add a `stretch` animation with 3 frames."
 
@@ -124,7 +163,7 @@ case stretch
 
 ---
 
-## Scenario 6: Voice listening UI
+## Scenario 7: Voice listening UI
 
 **User request:** "Show the dog while listening to voice commands."
 
@@ -143,7 +182,7 @@ Keep `VoiceRecordBar` / `VoiceRecordButton` mic control unchanged.
 
 ---
 
-## Scenario 7: Calm error state
+## Scenario 8: Calm error state
 
 **User request:** "Network failed — don't show a harsh error."
 
@@ -163,7 +202,45 @@ Keep `VoiceRecordBar` / `VoiceRecordButton` mic control unchanged.
 
 ---
 
-## Scenario 8: Agent self-check before PR
+## Scenario 9: Marketing hero near CTAs
+
+**User request:** "Show the animated dog on the landing page."
+
+**Agent steps:**
+
+1. Use direct `StarkSprite` — **no preset** for brand moments.
+2. Corner badge near CTA buttons; keep photo background.
+3. `idle`, size `small`, `pointer-events-none`.
+
+```tsx
+// MarketingHero.tsx
+<div className="relative">
+  <div className="absolute -top-6 -right-4 sm:-right-8 pointer-events-none">
+    <StarkSprite animation="idle" size="small" />
+  </div>
+  {children}
+</div>
+```
+
+Do not replace every feature-card icon unless explicitly requested.
+
+---
+
+## Scenario 10: Redirect / bootstrap loading
+
+**User request:** "Sprite while resolving active dog."
+
+Use `dailyPlanLoading` with optional message override:
+
+```tsx
+<SpriteOverlay preset="dailyPlanLoading" message="Opening Stark's care log…" mode="blocking" />
+```
+
+Files: `app/(dashboard)/today/page.tsx`, `BootstrapView.swift`
+
+---
+
+## Scenario 11: Agent self-check before PR
 
 Before finishing sprite work, verify:
 

@@ -44,6 +44,10 @@ struct MarketingHeroView<Actions: View>: View {
                     .frame(maxWidth: 480)
 
                 actions()
+                    .overlay(alignment: .topTrailing) {
+                        StarkSpriteView(animation: .idle, size: .small)
+                            .offset(x: 12, y: -24)
+                    }
             }
             .padding(.horizontal, 24)
             .padding(.top, 72)

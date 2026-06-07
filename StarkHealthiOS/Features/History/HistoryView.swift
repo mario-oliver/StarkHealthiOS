@@ -16,10 +16,11 @@ struct HistoryView: View {
                     .foregroundStyle(StarkTheme.mutedForeground)
 
                 if loading {
-                    ProgressView()
+                    SpriteOverlayView(preset: .dailyPlanLoading, mode: .inline, size: .small)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 24)
                 } else if logs.isEmpty {
-                    Text("No past logs yet.")
-                        .foregroundStyle(StarkTheme.mutedForeground)
+                    SpriteOverlayView(preset: .emptyState, mode: .inline, size: .small)
                 } else {
                     ForEach(logs) { log in
                         Button {
