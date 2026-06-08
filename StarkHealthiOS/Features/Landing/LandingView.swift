@@ -53,9 +53,11 @@ struct LandingView: View {
     }
 
     private var headline: Text {
-        Text("Coordinate ")
-        + Text("Stark's daily PT").foregroundStyle(StarkTheme.primary)
-        + Text(" by talking to the app")
+        var attributed = AttributedString("Coordinate Stark's daily PT by talking to the app")
+        if let highlightedRange = attributed.range(of: "Stark's daily PT") {
+            attributed[highlightedRange].foregroundColor = StarkTheme.primary
+        }
+        return Text(attributed)
     }
 
     private var featureSection: some View {

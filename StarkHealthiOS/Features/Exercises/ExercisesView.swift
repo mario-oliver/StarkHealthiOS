@@ -207,7 +207,7 @@ struct ExercisesView: View {
     }
 }
 
-extension CareActionRecord: @retroactive Hashable {
+extension CareActionRecord: Hashable {
     public func hash(into hasher: inout Hasher) { hasher.combine(id) }
     public static func == (lhs: CareActionRecord, rhs: CareActionRecord) -> Bool { lhs.id == rhs.id }
 }

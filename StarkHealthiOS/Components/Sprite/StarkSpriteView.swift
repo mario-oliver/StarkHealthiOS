@@ -60,7 +60,7 @@ struct StarkSpriteView: View {
 
         if case .remote(let set) = spriteSource,
            let entry = set.manifest.animations[animation.rawValue],
-           let key = entry.keys[safe: index],
+           entry.keys[safe: index] != nil,
            let uiImage = remoteFrames[index] {
             Image(uiImage: uiImage)
                 .resizable()

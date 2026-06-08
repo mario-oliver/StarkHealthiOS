@@ -13,7 +13,7 @@ actor RemoteSpriteFrameLoader {
         dogId: String,
         animation: SpriteAnimation,
         frameKey: String,
-        fetchFrame: FetchFrame
+        fetchFrame: @escaping FetchFrame
     ) async -> UIImage? {
         let cacheKey = "\(dogId)/\(animation.rawValue)/\(frameKey)"
 
@@ -29,7 +29,7 @@ actor RemoteSpriteFrameLoader {
             do {
                 let data = try await fetchFrame(animation.rawValue, frameKey)
                 guard let image = UIImage(data: data) else { return nil }
-                await self.store(cacheKey: cacheKey, image: image)
+                self.store(cacheKey: cacheKey, image: image)
                 return image
             } catch {
                 return nil
@@ -51,7 +51,7 @@ actor RemoteSpriteFrameLoader {
         dogId: String,
         animation: SpriteAnimation,
         keys: [String],
-        fetchFrame: FetchFrame
+        fetchFrame: @escaping FetchFrame
     ) async {
         await withTaskGroup(of: Void.self) { group in
             for key in keys {
@@ -74,7 +74,7 @@ actor RemoteSpriteFrameLoader {
 
 /// Global shared loader instance — shared across all sprite views.
 @MainActor
-final class SpriteFrameLoaderStore: ObservableObject {
+final class SpriteFrameLoaderStore {
     static let shared = SpriteFrameLoaderStore()
 
     let loader = RemoteSpriteFrameLoader()

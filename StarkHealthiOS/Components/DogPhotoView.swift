@@ -1,5 +1,6 @@
 import SwiftUI
 import UIKit
+import Foundation
 
 @MainActor
 @Observable
@@ -14,16 +15,30 @@ final class DogPhotoLoader {
     func load(
         dogId: String?,
         photoUrl: String?,
-        fetchAuthenticated: (@Sendable () async throws -> Data)?,
-        fetchPresigned: (@Sendable () async -> String?)?
+        fetchAuthenticated: (() async throws -> Data)?,
+        fetchPresigned: (() async -> String?)?
     ) async {
+        // #region agent log
+        debugLog(
+            runId: "warnings-check-pre",
+            hypothesisId: "H3",
+            location: "Components/DogPhotoView.swift:load",
+            message: "DogPhotoLoader.load called",
+            data: [
+                "dogIdPresent": dogId != nil,
+                "photoUrlPresent": photoUrl != nil,
+                "hasFetchAuthenticated": fetchAuthenticated != nil,
+                "hasFetchPresigned": fetchPresigned != nil
+            ]
+        )
+        // #endregion
         let key = "\(dogId ?? "")|\(photoUrl ?? "")"
         if key == loadedKey, image != nil { return }
 
         isLoading = true
         failed = false
 
-        if let dogId, let fetchAuthenticated {
+        if let fetchAuthenticated {
             if await loadFromData(key: key, loader: fetchAuthenticated) {
                 isLoading = false
                 return
@@ -42,7 +57,7 @@ final class DogPhotoLoader {
             return
         }
 
-        if let dogId, let fetchPresigned, !didRetry {
+        if let fetchPresigned, !didRetry {
             didRetry = true
             if let freshUrl = await fetchPresigned(), freshUrl != photoUrl, await loadFromURL(freshUrl) {
                 loadedKey = key
@@ -54,6 +69,43 @@ final class DogPhotoLoader {
         image = nil
         failed = true
         isLoading = false
+    }
+
+    private func debugLog(
+        runId: String,
+        hypothesisId: String,
+        location: String,
+        message: String,
+        data: [String: Any]
+    ) {
+        let payload: [String: Any] = [
+            "sessionId": "869fb7",
+            "runId": runId,
+            "hypothesisId": hypothesisId,
+            "location": location,
+            "message": message,
+            "data": data,
+            "timestamp": Int(Date().timeIntervalSince1970 * 1000)
+        ]
+        guard JSONSerialization.isValidJSONObject(payload),
+              let line = try? JSONSerialization.data(withJSONObject: payload),
+              let text = String(data: line, encoding: .utf8) else { return }
+
+        let url = URL(fileURLWithPath: "/Users/mariooliver/Documents/stark-health/.cursor/debug-869fb7.log")
+        if let handle = try? FileHandle(forWritingTo: url) {
+            do {
+                try handle.seekToEnd()
+                if let data = (text + "\n").data(using: .utf8) {
+                    handle.write(data)
+                }
+                try handle.close()
+            } catch {
+                try? handle.close()
+            }
+            return
+        }
+
+        try? (text + "\n").write(to: url, atomically: true, encoding: .utf8)
     }
 
     func reset() {
