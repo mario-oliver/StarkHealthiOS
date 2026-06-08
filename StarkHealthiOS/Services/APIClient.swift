@@ -45,6 +45,20 @@ struct APIClient {
         try await requestVoid(path: "v1/users", method: "POST", body: payload, token: token)
     }
 
+    // MARK: - Subscription
+
+    func getSubscription() async throws -> SubscriptionPayload {
+        try await request(path: "v1/subscription").data
+    }
+
+    func verifyAppleTransaction(signedTransaction: String) async throws -> VerifyAppleTransactionPayload {
+        try await request(
+            path: "v1/apple/verify-transaction",
+            method: "POST",
+            body: VerifyAppleTransactionBody(signedTransaction: signedTransaction)
+        ).data
+    }
+
     // MARK: - Dogs
 
     func listDogs() async throws -> [DogRecord] {

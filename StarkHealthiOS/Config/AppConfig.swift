@@ -13,6 +13,23 @@ enum AppConfig {
         return url
     }
 
+    static var appleProductPro: String {
+        optionalString(for: "APPLE_PRODUCT_PRO") ?? ""
+    }
+
+    static var appleProductBasic: String {
+        optionalString(for: "APPLE_PRODUCT_BASIC") ?? ""
+    }
+
+    private static func optionalString(for key: String) -> String? {
+        guard let value = Bundle.main.object(forInfoDictionaryKey: key) as? String,
+              !value.isEmpty,
+              !value.contains("$(") else {
+            return nil
+        }
+        return value
+    }
+
     private static func string(for key: String) -> String {
         guard let value = Bundle.main.object(forInfoDictionaryKey: key) as? String,
               !value.isEmpty,
