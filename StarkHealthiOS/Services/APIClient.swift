@@ -179,6 +179,48 @@ struct APIClient {
         return try await request(path: "v1/dogs/join", method: "POST", body: Body(shareCode: shareCode)).data
     }
 
+    // MARK: - Exercise Agent
+
+    func createExerciseAgentSession(_ dogId: String, message: String) async throws -> ExerciseAgentSessionPayload {
+        struct Body: Encodable { let message: String }
+        return try await request(
+            path: "v1/dogs/\(dogId)/exercise-agent/sessions",
+            method: "POST",
+            body: Body(message: message)
+        ).data
+    }
+
+    func getExerciseAgentSession(_ dogId: String, sessionId: String) async throws -> ExerciseAgentSessionPayload {
+        try await request(path: "v1/dogs/\(dogId)/exercise-agent/sessions/\(sessionId)").data
+    }
+
+    func sendExerciseAgentMessage(_ dogId: String, sessionId: String, message: String) async throws -> ExerciseAgentSessionPayload {
+        struct Body: Encodable { let message: String }
+        return try await request(
+            path: "v1/dogs/\(dogId)/exercise-agent/sessions/\(sessionId)/messages",
+            method: "POST",
+            body: Body(message: message)
+        ).data
+    }
+
+    func confirmExerciseAgentSession(_ dogId: String, sessionId: String) async throws -> CareActionRecord {
+        struct EmptyBody: Encodable {}
+        struct ConfirmResult: Decodable { let action: CareActionRecord; let status: String }
+        let response: APIResponse<ConfirmResult> = try await request(
+            path: "v1/dogs/\(dogId)/exercise-agent/sessions/\(sessionId)/confirm",
+            method: "POST",
+            body: EmptyBody()
+        )
+        return response.data.action
+    }
+
+    func cancelExerciseAgentSession(_ dogId: String, sessionId: String) async throws {
+        try await requestVoid(
+            path: "v1/dogs/\(dogId)/exercise-agent/sessions/\(sessionId)",
+            method: "DELETE"
+        )
+    }
+
     func presignDogPhoto(contentType: String, contentLength: Int) async throws -> PresignDogPhotoResult {
         struct Body: Encodable {
             let contentType: String
