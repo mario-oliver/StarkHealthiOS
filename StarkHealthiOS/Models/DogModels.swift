@@ -514,3 +514,65 @@ struct ExerciseAgentSessionPayload: Codable, Identifiable {
     let createdAt: String
     let updatedAt: String
 }
+
+// MARK: - Program Audit Agent
+
+enum ProgramAuditSessionStatus: String, Codable {
+    case active = "ACTIVE"
+    case awaitingInput = "AWAITING_INPUT"
+    case reportReady = "REPORT_READY"
+    case planReady = "PLAN_READY"
+    case committed = "COMMITTED"
+    case failed = "FAILED"
+}
+
+struct AuditObservation: Codable {
+    let actionId: String
+    let actionName: String
+    let finding: String
+    let severity: String
+    let recommendation: String
+}
+
+struct AuditReport: Codable {
+    let summary: String
+    let strengths: [String]
+    let gaps: [String]
+    let observations: [AuditObservation]
+    let overallRating: String
+}
+
+struct ProposedChangeUpdates: Codable {
+    let name: String?
+    let description: String?
+    let category: String?
+    let frequency: String?
+    let timeOfDay: String?
+    let instructions: String?
+}
+
+struct ProposedChange: Codable, Identifiable {
+    let id: String
+    let type: String
+    let actionId: String?
+    let actionName: String?
+    let updates: ProposedChangeUpdates?
+    let newAction: ProposedExercise?
+    let reason: String
+}
+
+struct ProposedProgramChanges: Codable {
+    let summary: String
+    let changes: [ProposedChange]
+}
+
+struct ProgramAuditSessionPayload: Codable, Identifiable {
+    let id: String
+    let dogId: String
+    let status: ProgramAuditSessionStatus
+    let messages: [ExerciseAgentMessage]
+    let report: AuditReport?
+    let plan: ProposedProgramChanges?
+    let createdAt: String
+    let updatedAt: String
+}

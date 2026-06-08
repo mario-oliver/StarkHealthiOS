@@ -221,6 +221,48 @@ struct APIClient {
         )
     }
 
+    // MARK: - Program Audit Agent
+
+    func createProgramAuditSession(_ dogId: String) async throws -> ProgramAuditSessionPayload {
+        struct EmptyBody: Encodable {}
+        return try await request(
+            path: "v1/dogs/\(dogId)/program-audit/sessions",
+            method: "POST",
+            body: EmptyBody()
+        ).data
+    }
+
+    func getProgramAuditSession(_ dogId: String, sessionId: String) async throws -> ProgramAuditSessionPayload {
+        try await request(path: "v1/dogs/\(dogId)/program-audit/sessions/\(sessionId)").data
+    }
+
+    func sendProgramAuditMessage(_ dogId: String, sessionId: String, message: String) async throws -> ProgramAuditSessionPayload {
+        struct Body: Encodable { let message: String }
+        return try await request(
+            path: "v1/dogs/\(dogId)/program-audit/sessions/\(sessionId)/messages",
+            method: "POST",
+            body: Body(message: message)
+        ).data
+    }
+
+    func confirmProgramAuditSession(_ dogId: String, sessionId: String, selectedChangeIds: [String]?) async throws -> [CareActionRecord] {
+        struct Body: Encodable { let selectedChangeIds: [String]? }
+        struct ConfirmResult: Decodable { let applied: [CareActionRecord]; let changesApplied: Int; let status: String }
+        let response: APIResponse<ConfirmResult> = try await request(
+            path: "v1/dogs/\(dogId)/program-audit/sessions/\(sessionId)/confirm",
+            method: "POST",
+            body: Body(selectedChangeIds: selectedChangeIds)
+        )
+        return response.data.applied
+    }
+
+    func cancelProgramAuditSession(_ dogId: String, sessionId: String) async throws {
+        try await requestVoid(
+            path: "v1/dogs/\(dogId)/program-audit/sessions/\(sessionId)",
+            method: "DELETE"
+        )
+    }
+
     func presignDogPhoto(contentType: String, contentLength: Int) async throws -> PresignDogPhotoResult {
         struct Body: Encodable {
             let contentType: String
