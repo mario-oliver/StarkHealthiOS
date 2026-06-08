@@ -221,6 +221,47 @@ struct APIClient {
         return try decoder.decode(APIResponse<TranscribeVoiceNotePayload>.self, from: data).data
     }
 
+    // MARK: - Sprite Generation
+
+    func createSpriteSession(_ dogId: String, photoKey: String, breed: String) async throws -> SpriteGenerationSessionPayload {
+        struct Body: Encodable { let photoKey: String; let breed: String }
+        return try await request(
+            path: "v1/dogs/\(dogId)/sprite-sessions",
+            method: "POST",
+            body: Body(photoKey: photoKey, breed: breed)
+        ).data
+    }
+
+    func getSpriteSession(_ dogId: String, sessionId: String) async throws -> SpriteGenerationSessionPayload {
+        try await request(path: "v1/dogs/\(dogId)/sprite-sessions/\(sessionId)").data
+    }
+
+    func cancelSpriteSession(_ dogId: String, sessionId: String) async throws {
+        try await requestVoid(
+            path: "v1/dogs/\(dogId)/sprite-sessions/\(sessionId)",
+            method: "DELETE"
+        )
+    }
+
+    func getDogSpriteSet(_ dogId: String) async throws -> SpriteSetPayload? {
+        let response: APIResponse<SpriteSetPayload?> = try await request(
+            path: "v1/dogs/\(dogId)/sprite-set"
+        )
+        return response.data
+    }
+
+    func fetchSpriteFrameData(_ dogId: String, animation: String, frame: String) async throws -> Data {
+        let path = "v1/dogs/\(dogId)/sprites/\(animation)/\(frame).png"
+        let token = try await resolveToken()
+        var urlRequest = URLRequest(url: makeURL(path: path))
+        urlRequest.httpMethod = "GET"
+        urlRequest.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        urlRequest.cachePolicy = .returnCacheDataElseLoad
+        let (data, response) = try await session.data(for: urlRequest)
+        try validate(response: response, data: data)
+        return data
+    }
+
     // MARK: - Private
 
     private func request<T: Decodable>(

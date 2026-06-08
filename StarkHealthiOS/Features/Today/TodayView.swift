@@ -9,6 +9,7 @@ struct TodayView: View {
     @State private var isTranscribing = false
     @State private var pollTask: Task<Void, Never>?
     @State private var voiceRecordId = UUID()
+    @State private var spriteSourceStore = SpriteSourceStore()
 
     private var dogId: String? { session.activeDogId }
     private var date: String { CareDisplay.localDateString() }
@@ -30,6 +31,7 @@ struct TodayView: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(StarkTheme.background)
+        .environment(\.spriteSource, spriteSourceStore.source)
         .overlay {
             if session.voiceRecord.isRecording {
                 SpriteOverlayView(preset: .voiceListening, size: .small)
@@ -39,6 +41,9 @@ struct TodayView: View {
         }
         .task(id: dogId) {
             await loadToday()
+            if let dogId {
+                await spriteSourceStore.load(dogId: dogId, apiClient: session.apiClient)
+            }
         }
         .onDisappear {
             pollTask?.cancel()
