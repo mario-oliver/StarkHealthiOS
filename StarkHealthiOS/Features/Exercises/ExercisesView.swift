@@ -12,6 +12,7 @@ struct ExercisesView: View {
     @State private var error: String?
     @State private var showCreateForm = false
     @State private var showAgent = false
+    @State private var showAudit = false
     @State private var editingAction: CareActionRecord?
     @State private var deactivatingAction: CareActionRecord?
     @State private var busy = false
@@ -60,6 +61,13 @@ struct ExercisesView: View {
         .sheet(isPresented: $showAgent) {
             if let dogId {
                 ExerciseAgentView(dogId: dogId) {
+                    await loadAll()
+                }
+            }
+        }
+        .sheet(isPresented: $showAudit) {
+            if let dogId {
+                ProgramAuditView(dogId: dogId) {
                     await loadAll()
                 }
             }
@@ -115,10 +123,13 @@ struct ExercisesView: View {
                 Text(plan?.name ?? "Care plan")
                     .font(.headline)
                 Spacer()
+                Button("Audit") { showAudit = true }
+                    .font(.subheadline)
+                    .foregroundStyle(StarkTheme.mutedForeground)
                 Button("Create with AI") { showAgent = true }
                     .font(.subheadline)
                     .foregroundStyle(StarkTheme.primary)
-                Button("Add exercise") { showCreateForm = true }
+                Button("Add") { showCreateForm = true }
                     .font(.subheadline)
             }
 
