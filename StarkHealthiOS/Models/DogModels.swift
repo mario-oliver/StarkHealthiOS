@@ -466,3 +466,113 @@ struct TranscribeVoiceNotePayload: Decodable {
     let text: String
     let voiceNote: VoiceNoteRecord
 }
+
+// MARK: - Exercise Agent
+
+enum ExerciseAgentSessionStatus: String, Codable {
+    case active = "ACTIVE"
+    case awaitingInput = "AWAITING_INPUT"
+    case draftReady = "DRAFT_READY"
+    case committed = "COMMITTED"
+    case failed = "FAILED"
+}
+
+struct ExerciseAgentMessage: Codable {
+    let role: String
+    let content: String
+}
+
+struct ProposedMovement: Codable {
+    let name: String
+    let description: String?
+    let instructions: String?
+    let sortOrder: Int?
+}
+
+struct ProposedExercise: Codable {
+    let name: String
+    let description: String?
+    let category: CareActionCategory
+    let frequency: CareActionFrequency
+    let timeOfDay: CareActionTimeOfDay?
+    let targetReps: Int?
+    let targetDurationSeconds: Int?
+    let instructions: String?
+    let movements: [ProposedMovement]
+    let rationale: String
+    let safetyNotes: String
+    let researchSummary: String
+}
+
+struct ExerciseAgentSessionPayload: Codable, Identifiable {
+    let id: String
+    let dogId: String
+    let status: ExerciseAgentSessionStatus
+    let messages: [ExerciseAgentMessage]
+    let questions: [String]
+    let draft: ProposedExercise?
+    let createdAt: String
+    let updatedAt: String
+}
+
+// MARK: - Program Audit Agent
+
+enum ProgramAuditSessionStatus: String, Codable {
+    case active = "ACTIVE"
+    case awaitingInput = "AWAITING_INPUT"
+    case reportReady = "REPORT_READY"
+    case planReady = "PLAN_READY"
+    case committed = "COMMITTED"
+    case failed = "FAILED"
+}
+
+struct AuditObservation: Codable {
+    let actionId: String
+    let actionName: String
+    let finding: String
+    let severity: String
+    let recommendation: String
+}
+
+struct AuditReport: Codable {
+    let summary: String
+    let strengths: [String]
+    let gaps: [String]
+    let observations: [AuditObservation]
+    let overallRating: String
+}
+
+struct ProposedChangeUpdates: Codable {
+    let name: String?
+    let description: String?
+    let category: String?
+    let frequency: String?
+    let timeOfDay: String?
+    let instructions: String?
+}
+
+struct ProposedChange: Codable, Identifiable {
+    let id: String
+    let type: String
+    let actionId: String?
+    let actionName: String?
+    let updates: ProposedChangeUpdates?
+    let newAction: ProposedExercise?
+    let reason: String
+}
+
+struct ProposedProgramChanges: Codable {
+    let summary: String
+    let changes: [ProposedChange]
+}
+
+struct ProgramAuditSessionPayload: Codable, Identifiable {
+    let id: String
+    let dogId: String
+    let status: ProgramAuditSessionStatus
+    let messages: [ExerciseAgentMessage]
+    let report: AuditReport?
+    let plan: ProposedProgramChanges?
+    let createdAt: String
+    let updatedAt: String
+}

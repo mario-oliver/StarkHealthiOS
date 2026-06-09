@@ -11,6 +11,8 @@ struct ExercisesView: View {
     @State private var loading = true
     @State private var error: String?
     @State private var showCreateForm = false
+    @State private var showAgent = false
+    @State private var showAudit = false
     @State private var editingAction: CareActionRecord?
     @State private var deactivatingAction: CareActionRecord?
     @State private var busy = false
@@ -56,6 +58,20 @@ struct ExercisesView: View {
         .background(StarkTheme.background)
         .task(id: dogId) { await loadAll() }
         .onChange(of: tab) { _, _ in Task { await loadAll() } }
+        .sheet(isPresented: $showAgent) {
+            if let dogId {
+                ExerciseAgentView(dogId: dogId) {
+                    await loadAll()
+                }
+            }
+        }
+        .sheet(isPresented: $showAudit) {
+            if let dogId {
+                ProgramAuditView(dogId: dogId) {
+                    await loadAll()
+                }
+            }
+        }
         .sheet(isPresented: $showCreateForm) {
             if let dogId {
                 CareActionFormView(title: "New exercise") { input in
@@ -107,7 +123,13 @@ struct ExercisesView: View {
                 Text(plan?.name ?? "Care plan")
                     .font(.headline)
                 Spacer()
-                Button("Add exercise") { showCreateForm = true }
+                Button("Audit") { showAudit = true }
+                    .font(.subheadline)
+                    .foregroundStyle(StarkTheme.mutedForeground)
+                Button("Create with AI") { showAgent = true }
+                    .font(.subheadline)
+                    .foregroundStyle(StarkTheme.primary)
+                Button("Add") { showCreateForm = true }
                     .font(.subheadline)
             }
 
