@@ -14,6 +14,7 @@ struct BucketDetailView: View {
     @State private var newTaskName = ""
     @State private var pollTask: Task<Void, Never>?
     @State private var voiceRecordId = UUID()
+    @State private var spriteSourceStore = SpriteSourceStore()
 
     private var date: String { CareDisplay.localDateString() }
 
@@ -152,6 +153,7 @@ struct BucketDetailView: View {
         }
         .navigationTitle(title)
         .background(StarkTheme.background)
+        .environment(\.spriteSource, spriteSourceStore.source)
         .overlay {
             if session.voiceRecord.isRecording {
                 SpriteOverlayView(preset: .voiceListening, size: .small)
@@ -159,7 +161,10 @@ struct BucketDetailView: View {
                 SpriteOverlayView(preset: .voiceProcessing)
             }
         }
-        .task { await loadToday() }
+        .task {
+            await loadToday()
+            await spriteSourceStore.load(dogId: dogId, apiClient: session.apiClient)
+        }
         .onDisappear { pollTask?.cancel() }
     }
 

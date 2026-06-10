@@ -13,6 +13,7 @@ enum SpritePreset: Sendable {
     case dayComplete
     case errorRetry
     case caregiverSync
+    case spriteGenerating
 
     struct Configuration: Sendable {
         let animation: SpriteAnimation
@@ -119,6 +120,14 @@ enum SpritePreset: Sendable {
                 subtext: "Stark's timeline is up to date.",
                 mode: .inline,
                 background: .transparent
+            )
+        case .spriteGenerating:
+            Configuration(
+                animation: .walk,
+                message: "Creating your companion…",
+                subtext: "Generating custom sprites from your dog photo.",
+                mode: .blocking,
+                background: .dimmed
             )
         }
     }

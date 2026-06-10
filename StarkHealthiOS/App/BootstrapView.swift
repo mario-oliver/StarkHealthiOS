@@ -9,7 +9,7 @@ struct BootstrapView: View {
         Group {
             if session.isBootstrapping {
                 SpriteOverlayView(preset: .careLogOpening)
-            } else if let error = session.bootstrapError {
+            } else if session.bootstrapError != nil {
                 VStack(spacing: 12) {
                     SpriteOverlayView(preset: .errorRetry, mode: .inline, size: .small)
                     Button("Retry") { Task { await session.bootstrap() } }
