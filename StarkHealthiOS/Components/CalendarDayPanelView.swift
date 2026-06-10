@@ -40,10 +40,10 @@ struct CalendarDayPanelView: View {
         .task(id: date) { await reload() }
     }
 
-    private func allTasks(from payload: TodayPayload) -> [DailyTaskRecord] {
-        payload.buckets.activity.tasks
-            + payload.buckets.mobility.tasks
-            + payload.buckets.recovery.tasks
+    private func allTasks(from payload: TodayPayload) -> [DailyCareActionRecord] {
+        payload.buckets.activity.actions
+            + payload.buckets.mobility.actions
+            + payload.buckets.recovery.actions
     }
 
     private func reload() async {

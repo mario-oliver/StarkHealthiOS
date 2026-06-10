@@ -36,7 +36,7 @@ struct BucketSummaryCardView: View {
             if let progress = data.progress, progress.total > 0 {
                 return "\(progress.completed) of \(progress.total) complete"
             }
-            let names = data.tasks.prefix(3).map(\.nameSnapshot)
+            let names = data.actions.prefix(3).map(\.nameSnapshot)
             return names.isEmpty ? "Nothing logged yet" : names.joined(separator: ", ")
         }
     }

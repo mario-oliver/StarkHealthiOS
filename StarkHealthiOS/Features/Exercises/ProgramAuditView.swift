@@ -7,16 +7,20 @@ struct ProgramAuditView: View {
     @Environment(SessionStore.self) private var session
     @Environment(\.dismiss) private var dismiss
 
-    @State private var auditSession: ProgramAuditSessionPayload?
+    @State private var auditSession: CareAgentSessionPayload?
     @State private var input: String = ""
     @State private var busy = false
     @State private var error: String?
     @State private var selectedChangeIds: Set<String> = []
 
-    private var status: ProgramAuditSessionStatus? { auditSession?.status }
+    private var status: CareAgentSessionStatus? { auditSession?.status }
+    private var report: AuditReport? { auditSession?.draft?.report }
+    private var plan: ProposedProgramChanges? { auditSession?.draft?.changes }
     private var isLoading: Bool { busy && auditSession == nil }
-    private var isPlanReady: Bool { status == .planReady }
-    private var isReportReady: Bool { status == .reportReady }
+    // The unified CareAgentSession exposes a single `draft`; phase is derived from its
+    // contents. Proposed changes ready to apply takes precedence over the report view.
+    private var isPlanReady: Bool { plan != nil && status == .draftReady }
+    private var isReportReady: Bool { report != nil && plan == nil }
 
     var body: some View {
         NavigationStack {
@@ -71,7 +75,7 @@ struct ProgramAuditView: View {
                         .padding(.top, 8)
 
                     // Audit report
-                    if let report = auditSession?.report {
+                    if let report {
                         AuditReportView(report: report)
                             .padding(.horizontal, 16)
                     }
@@ -81,8 +85,8 @@ struct ProgramAuditView: View {
                         chatBubble(msg)
                     }
 
-                    // Proposed changes (PLAN_READY)
-                    if isPlanReady, let plan = auditSession?.plan {
+                    // Proposed changes
+                    if isPlanReady, let plan {
                         ProposedChangesView(
                             plan: plan,
                             selectedIds: $selectedChangeIds
@@ -114,9 +118,9 @@ struct ProgramAuditView: View {
             .onChange(of: auditSession?.messages.count) { _, _ in
                 withAnimation { proxy.scrollTo("bottom") }
             }
-            .onChange(of: auditSession?.plan?.changes.count) { _, _ in
+            .onChange(of: plan?.changes.count) { _, _ in
                 // Pre-select all proposed changes when plan first appears
-                if let changes = auditSession?.plan?.changes {
+                if let changes = plan?.changes {
                     selectedChangeIds = Set(changes.map(\.id))
                 }
                 withAnimation { proxy.scrollTo("bottom") }
@@ -203,7 +207,7 @@ struct ProgramAuditView: View {
     // MARK: - Chat bubble
 
     @ViewBuilder
-    private func chatBubble(_ msg: ExerciseAgentMessage) -> some View {
+    private func chatBubble(_ msg: CareAgentMessage) -> some View {
         let isUser = msg.role == "user"
         HStack {
             if isUser { Spacer(minLength: 40) }
@@ -226,7 +230,7 @@ struct ProgramAuditView: View {
         busy = true
         error = nil
         do {
-            auditSession = try await session.apiClient.createProgramAuditSession(dogId)
+            auditSession = try await session.apiClient.createCareAgentSession(dogId, kind: .planAudit, message: nil)
         } catch {
             self.error = error.localizedDescription
         }
@@ -240,7 +244,7 @@ struct ProgramAuditView: View {
         error = nil
         input = ""
         do {
-            auditSession = try await session.apiClient.sendProgramAuditMessage(dogId, sessionId: current.id, message: text)
+            auditSession = try await session.apiClient.sendCareAgentMessage(dogId, sessionId: current.id, message: text)
         } catch {
             self.error = error.localizedDescription
         }
@@ -252,7 +256,7 @@ struct ProgramAuditView: View {
         busy = true
         error = nil
         do {
-            auditSession = try await session.apiClient.sendProgramAuditMessage(
+            auditSession = try await session.apiClient.sendCareAgentMessage(
                 dogId,
                 sessionId: current.id,
                 message: "Based on this analysis, please propose specific changes to improve the program."
@@ -268,7 +272,7 @@ struct ProgramAuditView: View {
         busy = true
         error = nil
         do {
-            _ = try await session.apiClient.confirmProgramAuditSession(
+            _ = try await session.apiClient.commitCareAgentSession(
                 dogId,
                 sessionId: current.id,
                 selectedChangeIds: Array(selectedChangeIds)
@@ -283,7 +287,7 @@ struct ProgramAuditView: View {
 
     private func handleCancel() async {
         if let current = auditSession, current.status != .committed {
-            try? await session.apiClient.cancelProgramAuditSession(dogId, sessionId: current.id)
+            try? await session.apiClient.cancelCareAgentSession(dogId, sessionId: current.id)
         }
         dismiss()
     }
@@ -533,7 +537,7 @@ private struct ProposedChangeCard: View {
         var parts: [String] = []
         if let f = u.frequency { parts.append(f.replacingOccurrences(of: "_", with: " ").capitalized) }
         if let t = u.timeOfDay { parts.append(t.capitalized) }
-        if let c = u.category { parts.append(c.replacingOccurrences(of: "_", with: " ").capitalized) }
+        if let b = u.bucket { parts.append(b.replacingOccurrences(of: "_", with: " ").capitalized) }
         return parts
     }
 }

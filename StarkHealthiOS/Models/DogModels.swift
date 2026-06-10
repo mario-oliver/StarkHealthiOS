@@ -36,16 +36,6 @@ enum HealthObservationType: String, Codable {
     case generalNote = "GENERAL_NOTE"
 }
 
-enum CareActionCategory: String, Codable, CaseIterable {
-    case stretch = "STRETCH"
-    case strength = "STRENGTH"
-    case mobility = "MOBILITY"
-    case walk = "WALK"
-    case medication = "MEDICATION"
-    case generalCare = "GENERAL_CARE"
-    case observationCheckpoint = "OBSERVATION_CHECKPOINT"
-}
-
 enum CareActionFrequency: String, Codable, CaseIterable {
     case daily = "DAILY"
     case everyOtherDay = "EVERY_OTHER_DAY"
@@ -59,13 +49,18 @@ enum CareActionTimeOfDay: String, Codable, CaseIterable {
     case anytime = "ANYTIME"
 }
 
+// Bucket is the ONLY categorization. Specificity lives in the action's `name`,
+// never in a second taxonomy. See context.md#Bucket.
 enum CareBucket: String, Codable, CaseIterable {
     case activity = "ACTIVITY"
     case mobility = "MOBILITY"
     case recovery = "RECOVERY"
 }
 
-enum DailyTaskSource: String, Codable {
+// Source of a DailyCareAction. Wire values match the API's enum; the Swift type is
+// named for the consolidated DailyCareAction (the former parallel daily-task table is
+// merged into it).
+enum DailyCareActionSource: String, Codable {
     case plan = "PLAN"
     case adHoc = "AD_HOC"
     case llmExtracted = "LLM_EXTRACTED"
@@ -137,58 +132,52 @@ struct UpdateDogInput: Encodable {
     var notes: String?
 }
 
-struct MovementProgress: Codable {
-    let completed: Int
-    let total: Int
-}
+// MARK: - Daily Care Action (the single dated execution record)
 
-struct DailyCareActionStepRecord: Codable, Identifiable {
+struct SubstitutedForAction: Codable {
     let id: String
-    let dailyCareActionId: String
-    let careActionStepId: String
     let nameSnapshot: String
-    let description: String?
-    let instructions: String?
-    let targetReps: Int?
-    let targetDurationSeconds: Int?
-    let mediaKey: String?
-    let mediaContentType: String?
-    let mediaUrl: String?
-    let status: DailyCareActionStatus
-    let completedAt: String?
-    let completedByUserId: String?
-    let notes: String?
-    let completedBy: UserSummary?
 }
 
+// The single dated, actualized instance of a CareAction — what was (or wasn't) done
+// on a given day. The former parallel daily-task record is merged into this; there are
+// no sub-steps. See context.md#DailyCareAction.
 struct DailyCareActionRecord: Codable, Identifiable {
     let id: String
     let dailyCareLogId: String
-    let careActionId: String
+    let bucket: CareBucket
+    let source: DailyCareActionSource
     let nameSnapshot: String
-    let categorySnapshot: String
+    let descriptionSnapshot: String?
+    let instructionsSnapshot: String?
     let status: DailyCareActionStatus
+    let tolerance: Tolerance?
     let completedAt: String?
     let completedByUserId: String?
     let notes: String?
-    let tolerance: Tolerance?
-    let issueObserved: Bool
     let targetReps: Int?
+    let actualReps: Int?
     let targetDurationSeconds: Int?
+    let actualDurationSeconds: Int?
+    let careActionId: String?
+    let substitutedForId: String?
+    let substitutedFor: SubstitutedForAction?
+    let extractionConfidence: Double?
+    let needsReview: Bool
+    let sortOrder: Int
     let completedBy: UserSummary?
-    let steps: [DailyCareActionStepRecord]
-    let movementProgress: MovementProgress?
 }
 
+// A dumb artifact: captured audio + its Whisper transcript. It is an *input* to a
+// CareAgentSession, not a session. Holds no extraction results. See context.md#VoiceNote.
 struct VoiceNoteRecord: Codable, Identifiable {
     let id: String
     let dogId: String
     let dailyCareLogId: String
     let userId: String
+    let audioUrl: String?
     let transcript: String
     let processingStatus: VoiceNoteProcessingStatus
-    let caregiverNote: String?
-    let needsReview: Bool
     let createdAt: String
     let user: UserSummary
 }
@@ -214,45 +203,13 @@ struct BucketScore: Codable {
     let computedAt: String
 }
 
-struct SubstitutedForTask: Codable {
-    let id: String
-    let nameSnapshot: String
-}
-
-struct DailyTaskRecord: Codable, Identifiable {
-    let id: String
-    let dailyCareLogId: String
-    let bucket: CareBucket
-    let source: DailyTaskSource
-    let nameSnapshot: String
-    let descriptionSnapshot: String?
-    let instructionsSnapshot: String?
-    let status: DailyCareActionStatus
-    let completedAt: String?
-    let completedByUserId: String?
-    let notes: String?
-    let targetReps: Int?
-    let actualReps: Int?
-    let targetDurationSeconds: Int?
-    let actualDurationSeconds: Int?
-    let careActionId: String?
-    let careActionStepId: String?
-    let substitutedForTaskId: String?
-    let substitutedFor: SubstitutedForTask?
-    let needsReview: Bool
-    let sortOrder: Int
-    let mediaUrl: String?
-    let mediaContentType: String?
-    let completedBy: UserSummary?
-}
-
 struct BucketProgress: Codable {
     let completed: Int
     let total: Int
 }
 
 struct BucketPayload: Codable {
-    let tasks: [DailyTaskRecord]
+    let actions: [DailyCareActionRecord]
     let observations: [HealthObservationRecord]
     let progress: BucketProgress?
     let score: BucketScore?
@@ -277,7 +234,6 @@ struct DailyLogPayload: Codable {
     let scoreComputedAt: String?
     let scoreInputVersion: String?
     let latestVoiceNoteAt: String?
-    let dailyCareActions: [DailyCareActionRecord]
     let voiceNotes: [VoiceNoteRecord]
     let healthObservations: [HealthObservationRecord]
 }
@@ -330,31 +286,17 @@ struct HistoryPayload: Codable {
     let pagination: PaginationInfo
 }
 
-struct CareActionStepRecord: Codable, Identifiable {
-    let id: String
-    let careActionId: String
-    let name: String
-    let bucket: CareBucket?
-    let description: String?
-    let instructions: String?
-    let targetReps: Int?
-    let targetDurationSeconds: Int?
-    let mediaKey: String?
-    let mediaContentType: String?
-    let mediaUrl: String?
-    let sortOrder: Int
-    let isActive: Bool
-    let createdAt: String?
-    let updatedAt: String?
-}
+// MARK: - Care Plan / Care Action (prescribed)
 
+// One flat, polymorphic, prescribed care item — the "main citizen". Grouped by
+// `bucket` (required); no sub-steps; no second `category` taxonomy.
+// See context.md#CareAction.
 struct CareActionRecord: Codable, Identifiable {
     let id: String
     let carePlanId: String
     let name: String
     let description: String?
-    let category: CareActionCategory
-    let bucket: CareBucket?
+    let bucket: CareBucket
     let frequency: CareActionFrequency
     let timeOfDay: CareActionTimeOfDay?
     let targetReps: Int?
@@ -364,7 +306,6 @@ struct CareActionRecord: Codable, Identifiable {
     let isActive: Bool
     let createdAt: String?
     let updatedAt: String?
-    let steps: [CareActionStepRecord]
 }
 
 struct CarePlanPayload: Codable {
@@ -377,7 +318,7 @@ struct CarePlanPayload: Codable {
     let actions: [CareActionRecord]
 }
 
-struct CreateDailyTaskInput: Encodable {
+struct CreateDailyCareActionInput: Encodable {
     var dailyCareLogId: String?
     var date: String?
     let bucket: CareBucket
@@ -388,16 +329,10 @@ struct CreateDailyTaskInput: Encodable {
     var targetDurationSeconds: Int?
 }
 
-struct ReviewDailyTaskInput: Encodable {
-    let accept: Bool
-    var status: DailyCareActionStatus?
-}
-
 struct CreateCareActionInput: Encodable {
     let name: String
     var description: String?
-    let category: CareActionCategory
-    var bucket: CareBucket?
+    let bucket: CareBucket
     let frequency: CareActionFrequency
     var timeOfDay: CareActionTimeOfDay?
     var targetReps: Int?
@@ -409,7 +344,6 @@ struct CreateCareActionInput: Encodable {
 struct UpdateCareActionInput: Encodable {
     var name: String?
     var description: String?
-    var category: CareActionCategory?
     var bucket: CareBucket?
     var frequency: CareActionFrequency?
     var timeOfDay: CareActionTimeOfDay?
@@ -419,39 +353,9 @@ struct UpdateCareActionInput: Encodable {
     var sortOrder: Int?
 }
 
-struct CreateCareActionStepInput: Encodable {
-    let name: String
-    var description: String?
-    var instructions: String?
-    var targetReps: Int?
-    var targetDurationSeconds: Int?
-    var mediaKey: String?
-    var mediaContentType: String?
-    var sortOrder: Int?
-}
-
-struct UpdateCareActionStepInput: Encodable {
-    var name: String?
-    var description: String?
-    var instructions: String?
-    var targetReps: Int?
-    var targetDurationSeconds: Int?
-    var mediaKey: String?
-    var mediaContentType: String?
-    var sortOrder: Int?
-}
-
 struct PresignDogPhotoResult: Decodable {
     let uploadUrl: String
     let photoKey: String
-    let viewUrl: String
-    let headers: [String: String]
-    let expiresIn: Int
-}
-
-struct PresignCareStepMediaResult: Decodable {
-    let uploadUrl: String
-    let mediaKey: String
     let viewUrl: String
     let headers: [String: String]
     let expiresIn: Int
@@ -467,9 +371,18 @@ struct TranscribeVoiceNotePayload: Decodable {
     let voiceNote: VoiceNoteRecord
 }
 
-// MARK: - Exercise Agent
+// MARK: - Care Agent Session
 
-enum ExerciseAgentSessionStatus: String, Codable {
+// The single conversational producer. One type for ALL conversational LLM flows;
+// replaces the two former per-flow session types (exercise-agent and program-audit).
+// See context.md#CareAgentSession.
+enum CareAgentSessionKind: String, Codable {
+    case dailyLog = "DAILY_LOG"
+    case planBuild = "PLAN_BUILD"
+    case planAudit = "PLAN_AUDIT"
+}
+
+enum CareAgentSessionStatus: String, Codable {
     case active = "ACTIVE"
     case awaitingInput = "AWAITING_INPUT"
     case draftReady = "DRAFT_READY"
@@ -477,53 +390,26 @@ enum ExerciseAgentSessionStatus: String, Codable {
     case failed = "FAILED"
 }
 
-struct ExerciseAgentMessage: Codable {
+struct CareAgentMessage: Codable {
     let role: String
     let content: String
 }
 
-struct ProposedMovement: Codable {
+// A care action proposed by a PLAN_BUILD session. Grouped by bucket (not a removed
+// `category`), with no sub-movements (steps are gone — distinct movements are
+// distinct actions).
+struct ProposedCareAction: Codable {
     let name: String
     let description: String?
-    let instructions: String?
-    let sortOrder: Int?
-}
-
-struct ProposedExercise: Codable {
-    let name: String
-    let description: String?
-    let category: CareActionCategory
+    let bucket: CareBucket
     let frequency: CareActionFrequency
     let timeOfDay: CareActionTimeOfDay?
     let targetReps: Int?
     let targetDurationSeconds: Int?
     let instructions: String?
-    let movements: [ProposedMovement]
     let rationale: String
     let safetyNotes: String
     let researchSummary: String
-}
-
-struct ExerciseAgentSessionPayload: Codable, Identifiable {
-    let id: String
-    let dogId: String
-    let status: ExerciseAgentSessionStatus
-    let messages: [ExerciseAgentMessage]
-    let questions: [String]
-    let draft: ProposedExercise?
-    let createdAt: String
-    let updatedAt: String
-}
-
-// MARK: - Program Audit Agent
-
-enum ProgramAuditSessionStatus: String, Codable {
-    case active = "ACTIVE"
-    case awaitingInput = "AWAITING_INPUT"
-    case reportReady = "REPORT_READY"
-    case planReady = "PLAN_READY"
-    case committed = "COMMITTED"
-    case failed = "FAILED"
 }
 
 struct AuditObservation: Codable {
@@ -545,7 +431,7 @@ struct AuditReport: Codable {
 struct ProposedChangeUpdates: Codable {
     let name: String?
     let description: String?
-    let category: String?
+    let bucket: String?
     let frequency: String?
     let timeOfDay: String?
     let instructions: String?
@@ -557,7 +443,7 @@ struct ProposedChange: Codable, Identifiable {
     let actionId: String?
     let actionName: String?
     let updates: ProposedChangeUpdates?
-    let newAction: ProposedExercise?
+    let newAction: ProposedCareAction?
     let reason: String
 }
 
@@ -566,13 +452,31 @@ struct ProposedProgramChanges: Codable {
     let changes: [ProposedChange]
 }
 
-struct ProgramAuditSessionPayload: Codable, Identifiable {
+// The session draft (JSON, refined across turns). Which fields are populated depends
+// on the session `kind`: PLAN_BUILD fills `proposedAction`; PLAN_AUDIT fills `report`
+// and then `changes`.
+struct CareAgentDraft: Codable {
+    let proposedAction: ProposedCareAction?
+    let report: AuditReport?
+    let changes: ProposedProgramChanges?
+}
+
+struct CareAgentSessionPayload: Codable, Identifiable {
     let id: String
     let dogId: String
-    let status: ProgramAuditSessionStatus
-    let messages: [ExerciseAgentMessage]
-    let report: AuditReport?
-    let plan: ProposedProgramChanges?
+    let kind: CareAgentSessionKind
+    let status: CareAgentSessionStatus
+    let messages: [CareAgentMessage]
+    let questions: [String]
+    let draft: CareAgentDraft?
+    let voiceNoteId: String?
+    let committedCarePlanId: String?
     let createdAt: String
     let updatedAt: String
+}
+
+struct CareAgentCommitResult: Decodable {
+    let status: String
+    let committedActions: [CareActionRecord]?
+    let changesApplied: Int?
 }

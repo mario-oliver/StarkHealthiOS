@@ -16,12 +16,6 @@ struct VoiceNoteCardView: View {
                     .foregroundStyle(StarkTheme.mutedForeground)
             }
 
-            if let caregiverNote = note.caregiverNote {
-                Text(caregiverNote)
-                    .font(.caption)
-                    .foregroundStyle(StarkTheme.primary)
-            }
-
             Text("\(CareDisplay.caregiverName(note.user)) · \(CareDisplay.formatTimestamp(note.createdAt))")
                 .font(.caption2)
                 .foregroundStyle(StarkTheme.mutedForeground)
