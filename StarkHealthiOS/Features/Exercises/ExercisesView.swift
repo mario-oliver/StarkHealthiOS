@@ -89,7 +89,6 @@ struct ExercisesView: View {
                         input: UpdateCareActionInput(
                             name: input.name,
                             description: input.description,
-                            category: input.category,
                             bucket: input.bucket,
                             frequency: input.frequency,
                             timeOfDay: input.timeOfDay,
@@ -114,7 +113,7 @@ struct ExercisesView: View {
     }
 
     private var filteredRoutineActions: [CareActionRecord] {
-        (plan?.actions.filter(\.isActive) ?? []).filter { ($0.bucket ?? .activity) == routineBucket }
+        (plan?.actions.filter(\.isActive) ?? []).filter { $0.bucket == routineBucket }
     }
 
     private var routineTab: some View {
@@ -166,7 +165,7 @@ struct ExercisesView: View {
             }
 
             if let schedulePayload, let dogId {
-                let tasks = allScheduleTasks(from: schedulePayload)
+                let tasks = allScheduleActions(from: schedulePayload)
                 if tasks.isEmpty {
                     SpriteOverlayView(preset: .emptyState, mode: .inline, size: .small)
                 } else {
@@ -183,10 +182,10 @@ struct ExercisesView: View {
         }
     }
 
-    private func allScheduleTasks(from payload: TodayPayload) -> [DailyTaskRecord] {
-        payload.buckets.activity.tasks
-            + payload.buckets.mobility.tasks
-            + payload.buckets.recovery.tasks
+    private func allScheduleActions(from payload: TodayPayload) -> [DailyCareActionRecord] {
+        payload.buckets.activity.actions
+            + payload.buckets.mobility.actions
+            + payload.buckets.recovery.actions
     }
 
     private func loadAll() async {

@@ -19,11 +19,7 @@ struct CareActionCardView: View {
             }
 
             HStack(spacing: 8) {
-                Text(action.category.rawValue.replacingOccurrences(of: "_", with: " "))
-                    .font(.caption)
-                    .foregroundStyle(StarkTheme.mutedForeground)
-
-                Text(CareDisplay.bucketLabel(action.bucket ?? .activity))
+                Text(CareDisplay.bucketLabel(action.bucket))
                     .font(.caption2.weight(.medium))
                     .padding(.horizontal, 8)
                     .padding(.vertical, 2)
@@ -32,7 +28,7 @@ struct CareActionCardView: View {
                     .clipShape(Capsule())
             }
 
-            Text("\(action.frequency.rawValue.replacingOccurrences(of: "_", with: " ")) · \(action.steps.count) movements")
+            Text(action.frequency.rawValue.replacingOccurrences(of: "_", with: " "))
                 .font(.caption2)
                 .foregroundStyle(StarkTheme.mutedForeground)
 

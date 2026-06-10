@@ -1,7 +1,7 @@
 import SwiftUI
 
 struct TaskRowView: View {
-    let task: DailyTaskRecord
+    let task: DailyCareActionRecord
     let dogId: String
     let apiClient: APIClient
     let onUpdated: () async -> Void
@@ -34,7 +34,7 @@ struct TaskRowView: View {
                         .strikethrough(isCompleted)
                         .foregroundStyle(isCompleted || isSkipped ? StarkTheme.mutedForeground : StarkTheme.foreground)
 
-                    if let badge = CareDisplay.taskSourceLabel(task.source) {
+                    if let badge = CareDisplay.actionSourceLabel(task.source) {
                         Text(badge)
                             .font(.caption2.weight(.medium))
                             .padding(.horizontal, 8)
@@ -185,10 +185,10 @@ struct TaskRowView: View {
             }
         }
         do {
-            _ = try await apiClient.updateDailyTask(
+            _ = try await apiClient.updateDailyCareAction(
                 dogId,
-                taskId: task.id,
-                body: UpdateDailyTaskBody(status: status, notes: notes, needsReview: needsReview)
+                actionId: task.id,
+                body: UpdateDailyCareActionBody(status: status, notes: notes, needsReview: needsReview)
             )
             await onUpdated()
             if isCompletion {

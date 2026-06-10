@@ -84,7 +84,7 @@ struct BucketDetailView: View {
                             .font(.caption.weight(.medium))
                             .foregroundStyle(StarkTheme.mutedForeground)
 
-                        ForEach(bucketData.tasks) { task in
+                        ForEach(bucketData.actions) { task in
                             TaskRowView(
                                 task: task,
                                 dogId: dogId,
@@ -93,7 +93,7 @@ struct BucketDetailView: View {
                             )
                         }
 
-                        if bucketData.tasks.isEmpty {
+                        if bucketData.actions.isEmpty {
                             SpriteOverlayView(preset: .emptyState, mode: .inline, size: .small)
                         }
 
@@ -186,9 +186,9 @@ struct BucketDetailView: View {
         let name = newTaskName.trimmingCharacters(in: .whitespaces)
         guard !name.isEmpty else { return }
         do {
-            _ = try await session.apiClient.createDailyTask(
+            _ = try await session.apiClient.createDailyCareAction(
                 dogId,
-                input: CreateDailyTaskInput(
+                input: CreateDailyCareActionInput(
                     dailyCareLogId: logId,
                     bucket: bucket,
                     name: name

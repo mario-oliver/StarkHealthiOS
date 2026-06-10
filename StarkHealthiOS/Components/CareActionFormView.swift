@@ -5,7 +5,6 @@ struct CareActionFormView: View {
 
     @State var name: String
     @State var description: String
-    @State var category: CareActionCategory
     @State var bucket: CareBucket
     @State var frequency: CareActionFrequency
     @State var timeOfDay: CareActionTimeOfDay?
@@ -23,7 +22,6 @@ struct CareActionFormView: View {
         self.onSave = onSave
         _name = State(initialValue: existing?.name ?? "")
         _description = State(initialValue: existing?.description ?? "")
-        _category = State(initialValue: existing?.category ?? .stretch)
         _bucket = State(initialValue: existing?.bucket ?? .activity)
         _frequency = State(initialValue: existing?.frequency ?? .daily)
         _timeOfDay = State(initialValue: existing?.timeOfDay)
@@ -39,11 +37,6 @@ struct CareActionFormView: View {
                 Section("Exercise") {
                     TextField("Name", text: $name)
                     TextField("Description", text: $description, axis: .vertical)
-                    Picker("Category", selection: $category) {
-                        ForEach(CareActionCategory.allCases, id: \.self) { value in
-                            Text(value.rawValue.replacingOccurrences(of: "_", with: " ")).tag(value)
-                        }
-                    }
                     Picker("Bucket", selection: $bucket) {
                         ForEach(CareBucket.allCases, id: \.self) { value in
                             Text(CareDisplay.bucketLabel(value)).tag(value)
@@ -89,7 +82,6 @@ struct CareActionFormView: View {
                 CreateCareActionInput(
                     name: name.trimmingCharacters(in: .whitespaces),
                     description: description.nilIfEmpty,
-                    category: category,
                     bucket: bucket,
                     frequency: frequency,
                     timeOfDay: timeOfDay,

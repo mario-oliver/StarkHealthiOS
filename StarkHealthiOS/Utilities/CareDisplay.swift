@@ -61,7 +61,7 @@ enum CareDisplay {
         }
     }
 
-    static func taskSourceLabel(_ source: DailyTaskSource) -> String? {
+    static func actionSourceLabel(_ source: DailyCareActionSource) -> String? {
         switch source {
         case .plan: return nil
         case .adHoc: return "Added manually"

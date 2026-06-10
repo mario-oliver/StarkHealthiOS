@@ -7,13 +7,17 @@ struct ExerciseAgentView: View {
     @Environment(SessionStore.self) private var session
     @Environment(\.dismiss) private var dismiss
 
-    @State private var agentSession: ExerciseAgentSessionPayload?
+    @State private var agentSession: CareAgentSessionPayload?
     @State private var input: String = ""
     @State private var busy = false
     @State private var error: String?
 
+    private var proposedAction: ProposedCareAction? {
+        agentSession?.draft?.proposedAction
+    }
+
     private var draftReady: Bool {
-        agentSession?.status == .draftReady && agentSession?.draft != nil
+        agentSession?.status == .draftReady && proposedAction != nil
     }
 
     private var awaitingInput: Bool {
@@ -78,7 +82,7 @@ struct ExerciseAgentView: View {
                             .padding(.horizontal, 16)
                     }
 
-                    if draftReady, let draft = agentSession?.draft {
+                    if draftReady, let draft = proposedAction {
                         DraftPreviewView(draft: draft)
                             .padding(.horizontal, 16)
                     }
@@ -166,7 +170,7 @@ struct ExerciseAgentView: View {
 
     private var revisionField: some View {
         TextField(
-            "Ask for changes, e.g. fewer movements or evening instead of morning…",
+            "Ask for changes, e.g. evening instead of morning…",
             text: $input,
             axis: .vertical
         )
@@ -176,7 +180,7 @@ struct ExerciseAgentView: View {
     }
 
     @ViewBuilder
-    private func chatBubble(_ msg: ExerciseAgentMessage) -> some View {
+    private func chatBubble(_ msg: CareAgentMessage) -> some View {
         let isUser = msg.role == "user"
         HStack {
             if isUser { Spacer(minLength: 40) }
@@ -229,9 +233,9 @@ struct ExerciseAgentView: View {
         input = ""
         do {
             if agentSession == nil {
-                agentSession = try await session.apiClient.createExerciseAgentSession(dogId, message: text)
+                agentSession = try await session.apiClient.createCareAgentSession(dogId, kind: .planBuild, message: text)
             } else {
-                agentSession = try await session.apiClient.sendExerciseAgentMessage(dogId, sessionId: agentSession!.id, message: text)
+                agentSession = try await session.apiClient.sendCareAgentMessage(dogId, sessionId: agentSession!.id, message: text)
             }
         } catch {
             self.error = error.localizedDescription
@@ -244,7 +248,7 @@ struct ExerciseAgentView: View {
         busy = true
         error = nil
         do {
-            _ = try await session.apiClient.confirmExerciseAgentSession(dogId, sessionId: current.id)
+            _ = try await session.apiClient.commitCareAgentSession(dogId, sessionId: current.id)
             dismiss()
             await onCommitted()
         } catch {
@@ -255,7 +259,7 @@ struct ExerciseAgentView: View {
 
     private func handleCancel() async {
         if let current = agentSession, current.status != .committed {
-            try? await session.apiClient.cancelExerciseAgentSession(dogId, sessionId: current.id)
+            try? await session.apiClient.cancelCareAgentSession(dogId, sessionId: current.id)
         }
         dismiss()
     }
@@ -264,7 +268,7 @@ struct ExerciseAgentView: View {
 // MARK: - Draft Preview
 
 private struct DraftPreviewView: View {
-    let draft: ProposedExercise
+    let draft: ProposedCareAction
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
@@ -293,27 +297,6 @@ private struct DraftPreviewView: View {
                 }
             }
 
-            VStack(alignment: .leading, spacing: 6) {
-                Text("Movements (\(draft.movements.count))")
-                    .font(.caption)
-                    .textCase(.uppercase)
-                    .tracking(1)
-                    .foregroundStyle(StarkTheme.mutedForeground)
-
-                ForEach(Array(draft.movements.enumerated()), id: \.offset) { index, movement in
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text("\(index + 1). \(movement.name)")
-                            .font(.subheadline.weight(.medium))
-                        if let instr = movement.instructions, !instr.isEmpty {
-                            Text(instr)
-                                .font(.caption)
-                                .foregroundStyle(StarkTheme.mutedForeground)
-                                .padding(.leading, 16)
-                        }
-                    }
-                }
-            }
-
             Divider()
 
             VStack(alignment: .leading, spacing: 6) {
@@ -335,7 +318,7 @@ private struct DraftPreviewView: View {
 
     private var metaLine: String {
         var parts: [String] = [
-            draft.category.rawValue.replacingOccurrences(of: "_", with: " ").capitalized,
+            CareDisplay.bucketLabel(draft.bucket),
             draft.frequency.rawValue.replacingOccurrences(of: "_", with: " ").capitalized
         ]
         if let tod = draft.timeOfDay {

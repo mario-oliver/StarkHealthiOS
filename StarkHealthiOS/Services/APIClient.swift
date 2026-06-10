@@ -105,40 +105,16 @@ struct APIClient {
         return try await request(path: "v1/dogs/\(dogId)/calendar?month=\(encoded)").data
     }
 
-    func updateDailyAction(
+    func updateDailyCareAction(
         _ dogId: String,
         actionId: String,
-        body: UpdateDailyActionBody
+        body: UpdateDailyCareActionBody
     ) async throws -> DailyCareActionRecord {
-        try await request(path: "v1/dogs/\(dogId)/daily-actions/\(actionId)", method: "PATCH", body: body).data
+        try await request(path: "v1/dogs/\(dogId)/daily-care-actions/\(actionId)", method: "PATCH", body: body).data
     }
 
-    func updateDailyActionStep(
-        _ dogId: String,
-        stepId: String,
-        body: UpdateDailyActionStepBody
-    ) async throws -> DailyCareActionStepRecord {
-        try await request(path: "v1/dogs/\(dogId)/daily-action-steps/\(stepId)", method: "PATCH", body: body).data
-    }
-
-    func updateDailyTask(
-        _ dogId: String,
-        taskId: String,
-        body: UpdateDailyTaskBody
-    ) async throws -> DailyTaskRecord {
-        try await request(path: "v1/dogs/\(dogId)/daily-tasks/\(taskId)", method: "PATCH", body: body).data
-    }
-
-    func createDailyTask(_ dogId: String, input: CreateDailyTaskInput) async throws -> DailyTaskRecord {
-        try await request(path: "v1/dogs/\(dogId)/daily-tasks", method: "POST", body: input).data
-    }
-
-    func reviewDailyTask(
-        _ dogId: String,
-        taskId: String,
-        input: ReviewDailyTaskInput
-    ) async throws -> DailyTaskRecord {
-        try await request(path: "v1/dogs/\(dogId)/daily-tasks/\(taskId)/review", method: "PATCH", body: input).data
+    func createDailyCareAction(_ dogId: String, input: CreateDailyCareActionInput) async throws -> DailyCareActionRecord {
+        try await request(path: "v1/dogs/\(dogId)/daily-care-actions", method: "POST", body: input).data
     }
 
     func getCarePlan(_ dogId: String) async throws -> CarePlanPayload {
@@ -157,18 +133,6 @@ struct APIClient {
         try await request(path: "v1/dogs/\(dogId)/care-plan/actions/\(actionId)/deactivate", method: "PATCH").data
     }
 
-    func createCareActionStep(_ dogId: String, actionId: String, input: CreateCareActionStepInput) async throws -> CareActionStepRecord {
-        try await request(path: "v1/dogs/\(dogId)/care-plan/actions/\(actionId)/steps", method: "POST", body: input).data
-    }
-
-    func updateCareActionStep(_ dogId: String, actionId: String, stepId: String, input: UpdateCareActionStepInput) async throws -> CareActionStepRecord {
-        try await request(path: "v1/dogs/\(dogId)/care-plan/actions/\(actionId)/steps/\(stepId)", method: "PATCH", body: input).data
-    }
-
-    func deactivateCareActionStep(_ dogId: String, actionId: String, stepId: String) async throws -> CareActionStepRecord {
-        try await request(path: "v1/dogs/\(dogId)/care-plan/actions/\(actionId)/steps/\(stepId)/deactivate", method: "PATCH").data
-    }
-
     func previewJoin(code: String) async throws -> JoinPreview {
         let encoded = code.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? code
         return try await request(path: "v1/dogs/join/preview?code=\(encoded)").data
@@ -179,86 +143,42 @@ struct APIClient {
         return try await request(path: "v1/dogs/join", method: "POST", body: Body(shareCode: shareCode)).data
     }
 
-    // MARK: - Exercise Agent
+    // MARK: - Care Agent (single conversational producer; replaces exercise-agent + program-audit)
 
-    func createExerciseAgentSession(_ dogId: String, message: String) async throws -> ExerciseAgentSessionPayload {
+    func createCareAgentSession(_ dogId: String, kind: CareAgentSessionKind, message: String?) async throws -> CareAgentSessionPayload {
+        struct Body: Encodable { let kind: CareAgentSessionKind; let message: String? }
+        return try await request(
+            path: "v1/dogs/\(dogId)/care-agent/sessions",
+            method: "POST",
+            body: Body(kind: kind, message: message)
+        ).data
+    }
+
+    func getCareAgentSession(_ dogId: String, sessionId: String) async throws -> CareAgentSessionPayload {
+        try await request(path: "v1/dogs/\(dogId)/care-agent/sessions/\(sessionId)").data
+    }
+
+    func sendCareAgentMessage(_ dogId: String, sessionId: String, message: String) async throws -> CareAgentSessionPayload {
         struct Body: Encodable { let message: String }
         return try await request(
-            path: "v1/dogs/\(dogId)/exercise-agent/sessions",
+            path: "v1/dogs/\(dogId)/care-agent/sessions/\(sessionId)/messages",
             method: "POST",
             body: Body(message: message)
         ).data
     }
 
-    func getExerciseAgentSession(_ dogId: String, sessionId: String) async throws -> ExerciseAgentSessionPayload {
-        try await request(path: "v1/dogs/\(dogId)/exercise-agent/sessions/\(sessionId)").data
-    }
-
-    func sendExerciseAgentMessage(_ dogId: String, sessionId: String, message: String) async throws -> ExerciseAgentSessionPayload {
-        struct Body: Encodable { let message: String }
-        return try await request(
-            path: "v1/dogs/\(dogId)/exercise-agent/sessions/\(sessionId)/messages",
-            method: "POST",
-            body: Body(message: message)
-        ).data
-    }
-
-    func confirmExerciseAgentSession(_ dogId: String, sessionId: String) async throws -> CareActionRecord {
-        struct EmptyBody: Encodable {}
-        struct ConfirmResult: Decodable { let action: CareActionRecord; let status: String }
-        let response: APIResponse<ConfirmResult> = try await request(
-            path: "v1/dogs/\(dogId)/exercise-agent/sessions/\(sessionId)/confirm",
-            method: "POST",
-            body: EmptyBody()
-        )
-        return response.data.action
-    }
-
-    func cancelExerciseAgentSession(_ dogId: String, sessionId: String) async throws {
-        try await requestVoid(
-            path: "v1/dogs/\(dogId)/exercise-agent/sessions/\(sessionId)",
-            method: "DELETE"
-        )
-    }
-
-    // MARK: - Program Audit Agent
-
-    func createProgramAuditSession(_ dogId: String) async throws -> ProgramAuditSessionPayload {
-        struct EmptyBody: Encodable {}
-        return try await request(
-            path: "v1/dogs/\(dogId)/program-audit/sessions",
-            method: "POST",
-            body: EmptyBody()
-        ).data
-    }
-
-    func getProgramAuditSession(_ dogId: String, sessionId: String) async throws -> ProgramAuditSessionPayload {
-        try await request(path: "v1/dogs/\(dogId)/program-audit/sessions/\(sessionId)").data
-    }
-
-    func sendProgramAuditMessage(_ dogId: String, sessionId: String, message: String) async throws -> ProgramAuditSessionPayload {
-        struct Body: Encodable { let message: String }
-        return try await request(
-            path: "v1/dogs/\(dogId)/program-audit/sessions/\(sessionId)/messages",
-            method: "POST",
-            body: Body(message: message)
-        ).data
-    }
-
-    func confirmProgramAuditSession(_ dogId: String, sessionId: String, selectedChangeIds: [String]?) async throws -> [CareActionRecord] {
+    func commitCareAgentSession(_ dogId: String, sessionId: String, selectedChangeIds: [String]? = nil) async throws -> CareAgentCommitResult {
         struct Body: Encodable { let selectedChangeIds: [String]? }
-        struct ConfirmResult: Decodable { let applied: [CareActionRecord]; let changesApplied: Int; let status: String }
-        let response: APIResponse<ConfirmResult> = try await request(
-            path: "v1/dogs/\(dogId)/program-audit/sessions/\(sessionId)/confirm",
+        return try await request(
+            path: "v1/dogs/\(dogId)/care-agent/sessions/\(sessionId)/commit",
             method: "POST",
             body: Body(selectedChangeIds: selectedChangeIds)
-        )
-        return response.data.applied
+        ).data
     }
 
-    func cancelProgramAuditSession(_ dogId: String, sessionId: String) async throws {
+    func cancelCareAgentSession(_ dogId: String, sessionId: String) async throws {
         try await requestVoid(
-            path: "v1/dogs/\(dogId)/program-audit/sessions/\(sessionId)",
+            path: "v1/dogs/\(dogId)/care-agent/sessions/\(sessionId)",
             method: "DELETE"
         )
     }
@@ -269,14 +189,6 @@ struct APIClient {
             let contentLength: Int
         }
         return try await request(path: "v1/uploads/dog-photo/presign", method: "POST", body: Body(contentType: contentType, contentLength: contentLength)).data
-    }
-
-    func presignCareStepMedia(contentType: String, contentLength: Int) async throws -> PresignCareStepMediaResult {
-        struct Body: Encodable {
-            let contentType: String
-            let contentLength: Int
-        }
-        return try await request(path: "v1/uploads/care-step-media/presign", method: "POST", body: Body(contentType: contentType, contentLength: contentLength)).data
     }
 
     func transcribeVoiceNote(_ dogId: String, wavData: Data, date: String?) async throws -> TranscribeVoiceNotePayload {
@@ -378,21 +290,10 @@ struct APIClient {
     }
 }
 
-struct UpdateDailyActionBody: Encodable {
+struct UpdateDailyCareActionBody: Encodable {
     var status: DailyCareActionStatus?
     var notes: String?
     var tolerance: Tolerance?
-    var issueObserved: Bool?
-}
-
-struct UpdateDailyActionStepBody: Encodable {
-    var status: DailyCareActionStatus?
-    var notes: String?
-}
-
-struct UpdateDailyTaskBody: Encodable {
-    var status: DailyCareActionStatus?
-    var notes: String?
     var actualReps: Int?
     var actualDurationSeconds: Int?
     var needsReview: Bool?
