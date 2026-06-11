@@ -459,6 +459,12 @@ struct CareAgentDraft: Codable {
     let proposedAction: ProposedCareAction?
     let report: AuditReport?
     let changes: ProposedProgramChanges?
+    // DAILY_LOG draft arrays — present (as arrays, possibly empty) only for DAILY_LOG
+    // sessions; absent for PLAN_BUILD / PLAN_AUDIT. Read via `dailyLog` (DailyLogDraft.swift).
+    let completions: [DailyLogCompletionDraft]?
+    let adHocActions: [DailyLogAdHocActionDraft]?
+    let observations: [DailyLogObservationDraft]?
+    let planChangeSuggestions: [DailyLogPlanChangeSuggestion]?
 }
 
 struct CareAgentSessionPayload: Codable, Identifiable {

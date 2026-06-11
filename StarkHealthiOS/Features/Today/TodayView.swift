@@ -10,6 +10,7 @@ struct TodayView: View {
     @State private var pollTask: Task<Void, Never>?
     @State private var voiceRecordId = UUID()
     @State private var spriteSourceStore = SpriteSourceStore()
+    @State private var dailyLogReview: DailyLogReviewTarget?
 
     private var dogId: String? { session.activeDogId }
     private var date: String { CareDisplay.localDateString() }
@@ -47,6 +48,16 @@ struct TodayView: View {
         }
         .onDisappear {
             pollTask?.cancel()
+        }
+        .sheet(item: $dailyLogReview) { target in
+            DailyLogReviewView(
+                vm: DailyLogReviewViewModel(
+                    dogId: target.dogId,
+                    voiceNoteId: target.voiceNoteId,
+                    api: session.apiClient
+                ),
+                onClose: { dailyLogReview = nil }
+            )
         }
     }
 
@@ -190,8 +201,22 @@ struct TodayView: View {
                 progress: result.progress
             )
             error = nil
+            // Once a note is transcribed, open the DAILY_LOG review for it (PRD client
+            // flow: transcribe → create DAILY_LOG session → review draft → confirm).
+            if let note = result.dailyLog.voiceNotes.last(where: {
+                $0.processingStatus == .transcribed || $0.processingStatus == .processed
+            }) {
+                dailyLogReview = DailyLogReviewTarget(dogId: dogId, voiceNoteId: note.id)
+            }
         } catch {
             self.error = error.localizedDescription
         }
     }
+}
+
+/// Identifies which transcribed VoiceNote the DAILY_LOG review sheet is opened against.
+private struct DailyLogReviewTarget: Identifiable {
+    let dogId: String
+    let voiceNoteId: String
+    var id: String { voiceNoteId }
 }
