@@ -154,6 +154,18 @@ struct APIClient {
         ).data
     }
 
+    // DAILY_LOG sessions are created against a transcribed VoiceNote (PRD FR1): the
+    // create endpoint accepts `{ kind: DAILY_LOG, voiceNoteId }` and runs extraction
+    // synchronously, returning a DRAFT_READY draft or an AWAITING_INPUT question.
+    func createDailyLogSession(_ dogId: String, voiceNoteId: String) async throws -> CareAgentSessionPayload {
+        struct Body: Encodable { let kind: CareAgentSessionKind; let voiceNoteId: String }
+        return try await request(
+            path: "v1/dogs/\(dogId)/care-agent/sessions",
+            method: "POST",
+            body: Body(kind: .dailyLog, voiceNoteId: voiceNoteId)
+        ).data
+    }
+
     func getCareAgentSession(_ dogId: String, sessionId: String) async throws -> CareAgentSessionPayload {
         try await request(path: "v1/dogs/\(dogId)/care-agent/sessions/\(sessionId)").data
     }
